@@ -1,0 +1,38 @@
+package org.firstinspires.ftc.teamcode.OpModes.Tuning;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
+
+@TeleOp(name = "Kinetic Kstatic Tuner")
+@Config
+public class KineticKStaticTuner extends LinearOpMode {
+    public static double scalar = 0.0001;
+
+    @Override
+    public void runOpMode() {
+        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
+        MecanumDrive robot = new MecanumDrive(hardwareMap, telemetry, true);
+
+        waitForStart();
+        double power = 0.0;
+
+        while (opModeIsActive()) {
+            double vely = robot.getLocalizerInstance().getVelocity().getY();
+
+            power += scalar * (vely > 13.0 ? -1 : 1);
+
+            robot.motors.setMotorPower(power, power, power, power);
+            telemetry.addData("LOOK AT ME", power + "");
+            telemetry.addData("Current Velocity copy value from LOOK AT ME when this stays approximately constant", vely);
+            telemetry.update();
+            robot.update();
+        }
+    }
+}

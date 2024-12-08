@@ -1,0 +1,34 @@
+package org.firstinspires.ftc.teamcode.OpModes.Tuning;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
+
+@TeleOp
+public class SWITCH_FROM_STATIC_TO_KINETIC_FRICTIONTuner extends LinearOpMode {
+    MecanumDrive drive;
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+        drive = new MecanumDrive(hardwareMap, telemetry, true);
+
+        waitForStart();
+
+        drive.motors.goAtMinimumPower();
+        long startTime = System.currentTimeMillis(), stopTime;
+        while (true) {
+            if (drive.getLocalizerInstance().getVelocity().getMagnitude() >= 5) {
+                stopTime = System.currentTimeMillis();
+                break;
+            }
+            drive.localizer.update();
+        }
+        drive.motors.setMotorPower(0, 0, 0, 0);
+        while (opModeIsActive()) {
+            telemetry.addData("Time to start", stopTime - startTime);
+            telemetry.update();
+        }
+    }
+}

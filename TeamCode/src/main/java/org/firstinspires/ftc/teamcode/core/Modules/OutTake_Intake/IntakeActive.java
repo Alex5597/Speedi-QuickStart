@@ -71,10 +71,6 @@ public class IntakeActive implements Module {
 
     @Override
     public void update() {
-        if (power != lastPower) {
-            intakeLeft.setPower(power);
-            intakeRight.setPower(power);
-        }
         if (!shouldStartCollectingAgain) {
             if (color == IntakeActive.Color.None)
                 if (getColor() == opposingAllianceColor) {
@@ -85,6 +81,10 @@ public class IntakeActive implements Module {
         } else if (timerToStartCollectingAgain.milliseconds() >= 700 && getColor() == Color.None) {
             setState(States.Collect);
             shouldStartCollectingAgain = false;
+        }
+        if (power != lastPower) {
+            intakeLeft.setPower(power);
+            intakeRight.setPower(power);
         }
     }
 

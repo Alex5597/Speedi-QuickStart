@@ -39,7 +39,7 @@ public class TeleOpBun extends LinearOpMode {
                 robot.intakeSample.setAllianceColor(IntakeActive.Color.Red);
             else
                 robot.intakeSample.setAllianceColor(IntakeActive.Color.Blue);
-            telemetry.addData("Current selected color", robot.intakeSample.getAllianceColor());
+            telemetry.addData("Current selected color for our alliance", robot.intakeSample.getAllianceColor());
             telemetry.update();
         }
         waitForStart();

@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.OpModes.Testing;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.BlueValues;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.RedValues;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.TrashHold;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.TreshHold;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.YellowValues;
 
 import android.graphics.Color;
@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 
-import org.firstinspires.ftc.robotcontroller.external.samples.SensorMRColor;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
 
 @TeleOp
@@ -38,11 +37,11 @@ public class ColorSensorTest extends LinearOpMode {
             telemetry.addData("COLOR", color);
             telemetry.update();
             if (color == IntakeActive.Color.None) {
-                if (Math.abs(hsvValues[0] - RedValues[0]) <= TrashHold[0]) {
+                if (Math.abs(hsvValues[0] - RedValues[0]) <= TreshHold[0]) {
                     color = IntakeActive.Color.Red;
-                } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TrashHold[0]) {
+                } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TreshHold[0]) {
                     color = IntakeActive.Color.Blue;
-                } else if (Math.abs(hsvValues[0] - YellowValues[0]) <= TrashHold[0]) {
+                } else if (Math.abs(hsvValues[0] - YellowValues[0]) <= TreshHold[0]) {
                     color = IntakeActive.Color.Yellow;
                 } else {
                     color = IntakeActive.Color.None;

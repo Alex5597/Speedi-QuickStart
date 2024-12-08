@@ -2,17 +2,19 @@ package org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.BlueValues;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.RedValues;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.TrashHold;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.TreshHold;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.YellowValues;
 
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 public class IntakeActive implements Module {
+    ElapsedTime timerToStartCollectingAgain = new ElapsedTime();
     CRServo intakeLeft;
     CRServo intakeRight;
     ColorSensor intakeSensor;
@@ -35,6 +37,7 @@ public class IntakeActive implements Module {
     Color color = Color.None;
     public static States state = States.Wait;
     double power = Constants.IntakeActivePower.intakeWait, lastPower = -2;
+    boolean shouldStartCollectingAgain = false;
 
     public IntakeActive(HardwareMap hardwareMap, Color allianceColor) {
         intakeLeft = hardwareMap.get(CRServo.class, "LI");
@@ -72,24 +75,49 @@ public class IntakeActive implements Module {
             intakeLeft.setPower(power);
             intakeRight.setPower(power);
         }
-        if(color == opposingAllianceColor){
-            setState(States.Score);
+        if (!shouldStartCollectingAgain) {
+            if (color == IntakeActive.Color.None)
+                if (getColor() == opposingAllianceColor) {
+                    setState(States.Score);
+                    shouldStartCollectingAgain = true;
+                    timerToStartCollectingAgain.reset();
+                }
+        } else if (timerToStartCollectingAgain.milliseconds() >= 700 && getColor() == Color.None) {
+            setState(States.Collect);
+            shouldStartCollectingAgain = false;
         }
+    }
 
+    public ColorSensor getColorSensor() {
+        return intakeSensor;
     }
 
     public Color getColor() {
-        if (color == IntakeActive.Color.None) {
-            if (Math.abs(hsvValues[0] - RedValues[0]) <= TrashHold[0]) {
-                color = IntakeActive.Color.Red;
-            } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TrashHold[0]) {
-                color = IntakeActive.Color.Blue;
-            } else if (Math.abs(hsvValues[0] - YellowValues[0]) <= TrashHold[0]) {
-                color = IntakeActive.Color.Yellow;
-            } else {
-                color = IntakeActive.Color.None;
-            }
+        if (Math.abs(hsvValues[0] - RedValues[0]) <= TreshHold[0]) {
+            color = IntakeActive.Color.Red;
+        } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TreshHold[0]) {
+            color = IntakeActive.Color.Blue;
+        } else if (Math.abs(hsvValues[0] - YellowValues[0]) <= TreshHold[0]) {
+            color = IntakeActive.Color.Yellow;
+        } else {
+            color = IntakeActive.Color.None;
         }
         return color;
+    }
+
+    public void setAllianceColor(Color color) {
+        if (color == Color.Red) {
+            opposingAllianceColor = Color.Blue;
+        } else {
+            opposingAllianceColor = Color.Red;
+        }
+    }
+
+    public Color getAllianceColor() {
+        if (opposingAllianceColor == Color.Red) {
+            return Color.Blue;
+        } else {
+            return Color.Red;
+        }
     }
 }

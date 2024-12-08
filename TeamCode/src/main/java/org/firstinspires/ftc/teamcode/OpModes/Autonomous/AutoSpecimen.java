@@ -24,7 +24,7 @@ public class AutoSpecimen extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
-        robot = new Robot(hardwareMap, new Pose(), telemetry, true);
+        robot = new Robot(hardwareMap, new Pose(), telemetry, true, IntakeActive.Color.Red);
 
         while (!isStarted() && !isStopRequested()) {
             robot.climb.setState(ClimbModule.States.Waiting);

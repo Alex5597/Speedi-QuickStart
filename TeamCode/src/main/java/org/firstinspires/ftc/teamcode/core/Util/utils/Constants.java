@@ -155,9 +155,8 @@ public class Constants {
     }
     @Config
     public static class BucketPositions {
-        public static double bucketWaitPose = 0.6;
-        public static double bucketHoldPose = 0.0;
-        public static double bucketScorePose = 1.0;
+        public static double bucketWaitPose = 0.31;
+        public static double bucketHoldPose = 0.14;
     }
     @Config
     public static class WristPositions {
@@ -167,7 +166,7 @@ public class Constants {
     }
     @Config
     public static class ColorValues{
-        public static float TrashHold[] = {15F,0.2F,5F};
+        public static float TreshHold[] = {15F,0.2F,5F};
         public static float RedValues[] = {23.5F,0.7F,12.2F};
         public static float BlueValues[] = {220.5F,0.75F,15F};
         public static float YellowValues[] = {75F,0.7F,25F};

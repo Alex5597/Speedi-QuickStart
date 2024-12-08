@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
 import org.firstinspires.ftc.teamcode.core.Robot;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
@@ -15,7 +16,7 @@ public class LiftTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        robot = new Robot(hardwareMap, new Pose(), telemetry, false);
+        robot = new Robot(hardwareMap, new Pose(), telemetry, false, IntakeActive.Color.Red);
 
         waitForStart();
 

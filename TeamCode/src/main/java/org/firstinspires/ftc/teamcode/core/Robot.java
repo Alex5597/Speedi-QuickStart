@@ -47,7 +47,7 @@ public class Robot {
 
     boolean shouldOpenClaw = false;
 
-    public Robot(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAutonomous) {
+    public Robot(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAutonomous, IntakeActive.Color allianceColor) {
         this.isAutonomous = isAutonomous;
         if (isAutonomous) {
             intakeSpecimen = new IntakePassive(hardwareMap, intakePassiveClosePose);
@@ -60,10 +60,10 @@ public class Robot {
         lift = new Lift(hardwareMap);
         lift.resetEnc();
         arm = new Arm(hardwareMap);
-        intakeSample = new IntakeActive(hardwareMap);
+        intakeSample = new IntakeActive(hardwareMap, allianceColor);
         wrist = new Wrist(hardwareMap);
         slides = new LinearSlides(hardwareMap);
-        bucket = new Bucket(hardwareMap);
+        bucket = new Bucket(hardwareMap, intakeSample);
 
         allHubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : allHubs) {
@@ -106,19 +106,13 @@ public class Robot {
                 wrist.setState(Wrist.States.Wait);
                 lift.setState(Lift.States.HighBasket);
                 arm.setState(Arm.States.Place);
-                if (lift.getState() != Lift.States.HighBasket)
-                    bucket.setState(Bucket.States.Hold);
-                else
-                    bucket.setState(Bucket.States.Score);
+                bucket.setState(Bucket.States.Wait);
                 break;
             case ScoreSampleLow:
                 wrist.setState(Wrist.States.Wait);
                 lift.setState(Lift.States.LowBasket);
                 arm.setState(Arm.States.Place);
-                if (lift.getState() != Lift.States.LowBasket)
-                    bucket.setState(Bucket.States.Hold);
-                else
-                    bucket.setState(Bucket.States.Score);
+                bucket.setState(Bucket.States.Wait);
                 break;
             case ScoreSpecimenHigh:
                 if (lift.getState() != Lift.States.HighChamber) {

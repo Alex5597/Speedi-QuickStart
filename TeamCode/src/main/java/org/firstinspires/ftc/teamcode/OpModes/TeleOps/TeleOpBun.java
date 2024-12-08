@@ -32,8 +32,16 @@ public class TeleOpBun extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        robot = new Robot(hardwareMap, new Pose(), telemetry, false);
 
+        robot = new Robot(hardwareMap, new Pose(), telemetry, false, IntakeActive.Color.Red);
+        while (!isStarted() || !isStopRequested()) {
+            if (gamepad1.a)
+                robot.intakeSample.setAllianceColor(IntakeActive.Color.Red);
+            else
+                robot.intakeSample.setAllianceColor(IntakeActive.Color.Blue);
+            telemetry.addData("Current selected color", robot.intakeSample.getAllianceColor());
+            telemetry.update();
+        }
         waitForStart();
 
         while (opModeIsActive()) {
@@ -108,9 +116,8 @@ public class TeleOpBun extends LinearOpMode {
                     //Bucket
                     if (gamepad2.right_bumper && timerBumper.milliseconds() >= 500) {
                         if (Bucket.state == Bucket.States.Hold) {
-                            robot.bucket.setState(Bucket.States.Score);
-                        }
-                        else {
+                            robot.bucket.setState(Bucket.States.Wait);
+                        } else {
                             robot.bucket.setState(Bucket.States.Hold);
                         }
                         timerBumper.reset();

@@ -48,10 +48,10 @@ public class Bucket implements Module {
     @Override
     public void update() {
         if (state == States.Wait)
-            if (sensorBucket.getDistance(DistanceUnit.MM) <= 32 &&
-                    intakeActiveSensor.getColor() == IntakeActive.Color.None) {
-                setState(States.Hold);
-            }
+            if (sensorBucket.getDistance(DistanceUnit.MM) <= 32)
+                if (intakeActiveSensor.getColor() == IntakeActive.Color.None) {
+                    setState(States.Hold);
+                }
         servoBucket.update();
     }
 

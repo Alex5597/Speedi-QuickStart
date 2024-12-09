@@ -22,7 +22,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import java.util.List;
 
 public class Robot {
-    ElapsedTime timer = new ElapsedTime();
+    ElapsedTime timerForOpeningClaw = new ElapsedTime(), timerForWrist = new ElapsedTime();
     public MecanumDrive drive;
     public Arm arm;
     public IntakeActive intakeSample;
@@ -46,6 +46,7 @@ public class Robot {
     }
 
     boolean shouldOpenClaw = false;
+    boolean shouldMoveWristForCollect = false;
 
     public Robot(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAutonomous, IntakeActive.Color allianceColor) {
         this.isAutonomous = isAutonomous;
@@ -72,16 +73,20 @@ public class Robot {
     }
 
     public void update() {
-        if (shouldOpenClaw && timer.milliseconds() >= 400) {
+        if (shouldOpenClaw && timerForOpeningClaw.milliseconds() >= 400) {
             intakeSpecimen.open();
             shouldOpenClaw = false;
         }
-        arm.update();
+        if (shouldMoveWristForCollect && timerForWrist.milliseconds() >= 900) {
+            wrist.setState(Wrist.States.Collect);
+            shouldMoveWristForCollect = false;
+        }
         drive.update();
+        wrist.update();
+        arm.update();
         intakeSpecimen.update();
         lift.update();
         intakeSample.update();
-        wrist.update();
         slides.update();
         bucket.update();
 
@@ -124,7 +129,7 @@ public class Robot {
                     arm.setState(Arm.States.Collect);
                     wrist.setState(Wrist.States.Wait);
                     shouldOpenClaw = true;
-                    timer.reset();
+                    timerForOpeningClaw.reset();
                 }
                 break;
             case ScoreSpecimenLow:
@@ -137,18 +142,20 @@ public class Robot {
                     arm.setState(Arm.States.Collect);
                     wrist.setState(Wrist.States.Wait);
                     shouldOpenClaw = true;
-                    timer.reset();
+                    timerForOpeningClaw.reset();
                 }
                 break;
             case SlidesExtended:
+                wrist.setState(Wrist.States.Wait);
                 slides.setState(LinearSlides.States.Extended);
-                wrist.setState(Wrist.States.Collect);
                 intakeSample.setState(IntakeActive.States.Collect);
                 bucket.setState(Bucket.States.Wait);
+                shouldMoveWristForCollect = true;
+                timerForWrist.reset();
                 break;
             case SlidesRetracted:
-                slides.setState(LinearSlides.States.Retracted);
                 wrist.setState(Wrist.States.Transfer);
+                slides.setState(LinearSlides.States.Retracted);
                 intakeSample.setState(IntakeActive.States.Collect);
                 bucket.setState(Bucket.States.Wait);
                 break;

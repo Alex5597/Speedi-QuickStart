@@ -23,18 +23,18 @@ public class TeleOpBun extends LinearOpMode {
     ElapsedTime timerSampleHigh = new ElapsedTime();
     ElapsedTime timerSampleLow = new ElapsedTime();
 
-    enum States {
+    public enum States {
         Specimens,
         Samples
     }
 
-    static States state = TeleOpBun.States.Specimens;
+    public static States state = TeleOpBun.States.Specimens;
 
     @Override
     public void runOpMode() throws InterruptedException {
 
         robot = new Robot(hardwareMap, new Pose(), telemetry, false, IntakeActive.Color.Red);
-        while (!isStarted() || !isStopRequested()) {
+        while (!isStarted() && !isStopRequested()) {
             if (gamepad1.a)
                 robot.intakeSample.setAllianceColor(IntakeActive.Color.Red);
             else
@@ -42,8 +42,10 @@ public class TeleOpBun extends LinearOpMode {
             telemetry.addData("Current selected color for our alliance", robot.intakeSample.getAllianceColor());
             telemetry.update();
         }
+        state = TeleOpBun.States.Specimens;
         waitForStart();
-
+        telemetry.addLine("OK");
+        telemetry.update();
         while (opModeIsActive()) {
             //Driver 1 Controls
 
@@ -133,12 +135,18 @@ public class TeleOpBun extends LinearOpMode {
                         robot.setAction(Robot.Actions.ScoreSampleLow);
                         timerSampleLow.reset();
                     }
-
+                    break;
             }
-            robot.slides.setTarget(-gamepad2.right_stick_y);
+            if (gamepad2.left_stick_button)
+                robot.setAction(Robot.Actions.SlidesRetracted);
+            if (gamepad2.right_stick_button)
+                robot.setAction(Robot.Actions.SlidesExtended);
+            robot.slides.setTarget(robot.drive.motors.smoothControls(-gamepad2.right_stick_y));
 
             //Update
             robot.update();
+            telemetry.addData("Culoare citita", robot.intakeSample.getColor());
+            telemetry.update();
         }
 
     }

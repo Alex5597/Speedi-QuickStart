@@ -22,7 +22,7 @@ public class Wrist implements Module {
     }
 
     public Wrist(HardwareMap hardwareMap) {
-        wrist = new BetterServo(hardwareMap.get(Servo.class, "W"), wristTransferPose);
+        wrist = new BetterServo(hardwareMap.get(Servo.class, "W"), wristWaitPose);
     }
     public void setState(Wrist.States state) {
         this.state = state;

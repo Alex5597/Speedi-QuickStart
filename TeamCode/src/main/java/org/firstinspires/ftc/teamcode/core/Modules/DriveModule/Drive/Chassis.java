@@ -128,9 +128,9 @@ public class Chassis implements Module {
     public void driveFieldCentric(Gamepad gamepad, double angle) {
         resetMinPowersToOvercomeFriction();
 
-        double forward = smoothControls(-gamepad.left_stick_y);
-        double strafe = smoothControls(gamepad.left_stick_x);
-        double turn = smoothControls(gamepad.right_stick_x);
+        double forward = (-gamepad.left_stick_y);
+        double strafe = (gamepad.left_stick_x);
+        double turn = (gamepad.right_stick_x);
 
         Vector drive = new Vector(strafe, forward, turn).rotate(angle);
         if (drive.getMagnitude() <= 0.05) {

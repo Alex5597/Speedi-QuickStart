@@ -72,13 +72,13 @@ public class IntakeActive implements Module {
     @Override
     public void update() {
         if (!shouldStartCollectingAgain) {
-            if (color == IntakeActive.Color.None)
+            if (getColor() == IntakeActive.Color.None)
                 if (getColor() == opposingAllianceColor) {
                     setState(States.Score);
                     shouldStartCollectingAgain = true;
                     timerToStartCollectingAgain.reset();
                 }
-        } else if (timerToStartCollectingAgain.milliseconds() >= 700 && getColor() == Color.None) {
+        } else if (timerToStartCollectingAgain.milliseconds() >= 900 && getColor() == Color.None) {
             setState(States.Collect);
             shouldStartCollectingAgain = false;
         }

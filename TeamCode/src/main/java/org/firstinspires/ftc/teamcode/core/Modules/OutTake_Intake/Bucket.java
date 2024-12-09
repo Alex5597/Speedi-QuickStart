@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.OpModes.TeleOps.TeleOpBun;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.BetterServo;
 
@@ -51,6 +52,7 @@ public class Bucket implements Module {
             if (sensorBucket.getDistance(DistanceUnit.MM) <= 32)
                 if (intakeActiveSensor.getColor() == IntakeActive.Color.None) {
                     setState(States.Hold);
+                    TeleOpBun.state = TeleOpBun.States.Samples;
                 }
         servoBucket.update();
     }

@@ -8,13 +8,14 @@ Motors:
 2 - RBM
 3 - LBM
 Servo motors:
-1 - LI // left intake active
-2 - RI // left intake active
-3 - LS// linear slides
-4 - A// servo arm
+0 - LS// linear slides
+2 - LI // left intake active?
+4 - RI // right intake active?
 I2C:
-0- IS //color sensor intake
-1- BS// bucket sensor
+0-imu //imu sensor
+1- odo //pinpoint
+2- IS //color sensor intake
+
 
 Expansion hub:
 Motors:
@@ -23,9 +24,12 @@ Motors:
 3 - ASCR // ascendRight
 Servo motors:
 0 - W // wrist
-1 - SB //servo bucket
+2 - A// servo arm
+4 - IP //intake passive
+5 - SB //servo bucket
+
 I2C:
-0-imu //imu sensor
+0- BS// bucket sensor
 */
 
 package org.firstinspires.ftc.teamcode.core.Util.utils;
@@ -127,19 +131,19 @@ public class Constants {
     @Config
     public static class ArmPoses {
         public static double armCollectPose = 0;
-        public static double armScorePose = 0.75;
+        public static double armScorePose = 1;
     }
 
     @Config
     public static class LiftPositions {
-        public static double liftScoreHighSpecimen = 2240, liftLowChamber = 510, liftHighChamber = 2850;
+        public static double liftScoreHighSpecimen = 2040, liftLowChamber = 510, liftHighChamber = 2700;
         public static double liftCollect = 0, liftLowBasket = 2400, liftHighBasket = 4190;
     }
 
     @Config
     public static class IntakePassivePositions {
         public static double intakePassiveClosePose = 0.0;
-        public static double intakePassiveOpenPose = 0.95;
+        public static double intakePassiveOpenPose = 1.0;
     }
 
     @Config
@@ -151,18 +155,19 @@ public class Constants {
     @Config
     public static class LinearSlidePositions {
         public static double slidesExtendedPose = 0.3;
+        public static double slidesAuxPose = 0.15;
         public static double slidesRetractedPose = 0.0;
     }
     @Config
     public static class BucketPositions {
         public static double bucketWaitPose = 0.31;
-        public static double bucketHoldPose = 0.14;
+        public static double bucketHoldPose = 0.12;
     }
     @Config
     public static class WristPositions {
-        public static double wristWaitPose = 0.2;
-        public static double wristCollectPose = 0.03;
-        public static double wristTransferPose = 1.0;
+        public static double wristWaitPose = 0.15;
+        public static double wristCollectPose = 0.970;
+        public static double wristTransferPose = 0.03;
     }
     @Config
     public static class ColorValues{

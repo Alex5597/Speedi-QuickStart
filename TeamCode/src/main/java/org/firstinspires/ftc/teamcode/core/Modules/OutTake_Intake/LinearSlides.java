@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LinearSlidePositions.slidesAuxPose;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LinearSlidePositions.slidesExtendedPose;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LinearSlidePositions.slidesRetractedPose;
 
@@ -18,7 +19,8 @@ public class LinearSlides implements Module {
 
     public enum States {
         Extended,
-        Retracted
+        Retracted,
+        Aux
     }
 
     public LinearSlides(HardwareMap hardwareMap) {
@@ -37,11 +39,15 @@ public class LinearSlides implements Module {
                 linkageServo.setPosition(slidesRetractedPose);
                 target = slidesRetractedPose;
                 break;
+            case Aux:
+                linkageServo.setPosition(slidesAuxPose);
+                target = slidesAuxPose;
+                break;
         }
     }
 
-    public void setTarget(double input){
-        target = target + Range.scale(input, -1, 1,-0.03,0.03);
+    public void setTarget(double input) {
+        target = target + Range.scale(input, -1, 1, -0.008, 0.008);
         target = Range.clip(target, 0, 0.3);
         linkageServo.setPosition(target);
     }

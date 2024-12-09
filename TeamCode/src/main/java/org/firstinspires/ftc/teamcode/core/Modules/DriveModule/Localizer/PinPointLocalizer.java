@@ -130,6 +130,9 @@ public class PinPointLocalizer implements Localizer {
     @Override
     public void updateOnlyImu() {
         odo.update(GoBildaPinpointDriver.readData.ONLY_UPDATE_HEADING);
+        Pose2D pose = odo.getPosition();
+        double angle = angleWrapper(odo.getHeading());
+        currentPosition = new Pose(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), angle);
     }
 
     @Override

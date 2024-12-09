@@ -5,6 +5,8 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValu
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.TreshHold;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.ColorValues.YellowValues;
 
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -71,14 +73,15 @@ public class IntakeActive implements Module {
 
     @Override
     public void update() {
+        getColor();
         if (!shouldStartCollectingAgain) {
-            if (getColor() == IntakeActive.Color.None)
-                if (getColor() == opposingAllianceColor) {
+            if (color == IntakeActive.Color.None)
+                if (color == opposingAllianceColor) {
                     setState(States.Score);
                     shouldStartCollectingAgain = true;
                     timerToStartCollectingAgain.reset();
                 }
-        } else if (timerToStartCollectingAgain.milliseconds() >= 900 && getColor() == Color.None) {
+        } else if (timerToStartCollectingAgain.milliseconds() >= 500 && color == Color.None) {
             setState(States.Collect);
             shouldStartCollectingAgain = false;
         }
@@ -93,6 +96,7 @@ public class IntakeActive implements Module {
     }
 
     public Color getColor() {
+        android.graphics.Color.RGBToHSV(intakeSensor.red() * 8, intakeSensor.green() * 8, intakeSensor.blue() * 8, hsvValues);
         if (Math.abs(hsvValues[0] - RedValues[0]) <= TreshHold[0]) {
             color = IntakeActive.Color.Red;
         } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TreshHold[0]) {

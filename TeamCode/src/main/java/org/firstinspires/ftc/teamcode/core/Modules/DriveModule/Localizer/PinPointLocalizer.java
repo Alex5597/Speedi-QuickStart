@@ -62,7 +62,7 @@ public class PinPointLocalizer implements Localizer {
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
         try {
-            Thread.sleep(300);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -81,8 +81,8 @@ public class PinPointLocalizer implements Localizer {
         Pose2D pose = odo.getPosition();
         currentPosition = new Pose(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), angle);
 
-        double xVelocity = odo.getVelX();//(adapterX.getVelocityBasedOnTicks(-odo.getEncoderX())) * cmPerTickForward;
-        double yVelocity = odo.getVelY();//(adapterY.getVelocityBasedOnTicks(odo.getEncoderY())) * cmPerTickForward;
+        double xVelocity = (adapterX.getVelocityBasedOnTicks(-odo.getEncoderX())) * cmPerTickForward;
+        double yVelocity = (adapterY.getVelocityBasedOnTicks(odo.getEncoderY())) * cmPerTickForward;
 
         velocityVectorRaw = new Vector(xVelocityFilter.getValue(xVelocity), yVelocityFilter.getValue(yVelocity));
         Vector driveTrainvelocity = velocityVectorRaw.rotate(-currentPosition.getHeading()); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
@@ -102,7 +102,7 @@ public class PinPointLocalizer implements Localizer {
 
     @Override
     public Vector getVelocity() {
-        return new Vector(odo.getVelocity());
+        return velocityVectorRaw;
     }
 
     @Override

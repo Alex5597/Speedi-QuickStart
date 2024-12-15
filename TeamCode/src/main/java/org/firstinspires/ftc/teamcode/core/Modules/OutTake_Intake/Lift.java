@@ -28,7 +28,8 @@ public class Lift implements Module {
         LowChamber,
         HighChamber,
         ScoreHighSpecimen,
-        Reset
+        Reset,
+        GOUP
     }
 
     public States state = States.Collect;
@@ -76,6 +77,9 @@ public class Lift implements Module {
                 break;
             case ScoreHighSpecimen:
                 PIDFController.setDesired_Position(liftScoreHighSpecimen);
+                break;
+            case GOUP:
+                PIDFController.setDesired_Position(PIDFController.getTarget() + 150);
                 break;
             case Reset:
                 liftMotor.setPowerForced(-0.3);

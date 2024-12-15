@@ -21,8 +21,11 @@ public class Wrist implements Module {
         Wait
     }
 
-    public Wrist(HardwareMap hardwareMap) {
-        wrist = new BetterServo(hardwareMap.get(Servo.class, "W"), wristWaitPose);
+    public Wrist(HardwareMap hardwareMap, boolean isAuto) {
+        if(isAuto)
+            wrist = new BetterServo(hardwareMap.get(Servo.class, "W"), wristWaitPose);
+        else
+            wrist = new BetterServo(hardwareMap.get(Servo.class, "W"));
     }
     public void setState(Wrist.States state) {
         this.state = state;

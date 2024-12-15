@@ -25,6 +25,11 @@ public class BetterServo {
         setInitialPosition(initialPosition);
     }
 
+    public BetterServo(Servo servo) {
+        this.servo = servo;
+        this.isSlower = false;
+    }
+
     private void setInitialPosition(double pos) {
         if (!isSlower) {
             if (Math.abs(pos - lastPosition) >= epsilon)

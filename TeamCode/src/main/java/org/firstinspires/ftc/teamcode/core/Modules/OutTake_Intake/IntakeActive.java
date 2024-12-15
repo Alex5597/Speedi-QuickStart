@@ -40,6 +40,7 @@ public class IntakeActive implements Module {
     public static States state = States.Wait;
     double power = Constants.IntakeActivePower.intakeWait, lastPower = -2;
     boolean shouldStartCollectingAgain = false;
+    boolean canRetract = false;
 
     public IntakeActive(HardwareMap hardwareMap, Color allianceColor) {
         intakeLeft = hardwareMap.get(CRServo.class, "LI");
@@ -71,17 +72,25 @@ public class IntakeActive implements Module {
         }
     }
 
+    public double getPower() {
+        return power;
+    }
+
     @Override
     public void update() {
-        getColor();
+        color = getColor();
+        if (color == Color.None)
+            canRetract = false;
         if (!shouldStartCollectingAgain) {
-            if (color == IntakeActive.Color.None)
-                if (color == opposingAllianceColor) {
-                    setState(States.Score);
-                    shouldStartCollectingAgain = true;
-                    timerToStartCollectingAgain.reset();
-                }
-        } else if (timerToStartCollectingAgain.milliseconds() >= 500 && color == Color.None) {
+            if (color == opposingAllianceColor) {
+                setState(States.Score);
+                shouldStartCollectingAgain = true;
+                timerToStartCollectingAgain.reset();
+                canRetract = false;
+            } else if (color == Color.Yellow || color == getAllianceColor()) {
+                canRetract = true;
+            }
+        } else if (timerToStartCollectingAgain.milliseconds() >= 700 && color == Color.None) {
             setState(States.Collect);
             shouldStartCollectingAgain = false;
         }
@@ -97,12 +106,12 @@ public class IntakeActive implements Module {
 
     public Color getColor() {
         android.graphics.Color.RGBToHSV(intakeSensor.red() * 8, intakeSensor.green() * 8, intakeSensor.blue() * 8, hsvValues);
-        if (Math.abs(hsvValues[0] - RedValues[0]) <= TreshHold[0]) {
-            color = IntakeActive.Color.Red;
+        if (Math.abs(hsvValues[0] - YellowValues[0]) <= TreshHold[0]) {
+            color = IntakeActive.Color.Yellow;
         } else if (Math.abs(hsvValues[0] - BlueValues[0]) <= TreshHold[0]) {
             color = IntakeActive.Color.Blue;
-        } else if (Math.abs(hsvValues[0] - YellowValues[0]) <= TreshHold[0]) {
-            color = IntakeActive.Color.Yellow;
+        } else if (Math.abs(hsvValues[0] - RedValues[0]) <= TreshHold[0]) {
+            color = Color.Red;
         } else {
             color = IntakeActive.Color.None;
         }
@@ -123,5 +132,13 @@ public class IntakeActive implements Module {
         } else {
             return Color.Red;
         }
+    }
+
+    public boolean canRetract() {
+        return canRetract;
+    }
+
+    public void setCanRetract(boolean canRetract) {
+        this.canRetract = canRetract;
     }
 }

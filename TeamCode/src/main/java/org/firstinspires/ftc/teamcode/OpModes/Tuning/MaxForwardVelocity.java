@@ -7,17 +7,23 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
 @TeleOp
 public class MaxForwardVelocity extends LinearOpMode {
     MecanumDrive drive;
+    LinearSlides slides;
+    IntakeActive intakeActive;
     double accelerationTime = 1500;//MS
     double maxVelocity = -1;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        slides = new LinearSlides(hardwareMap,true);
+        intakeActive = new IntakeActive(hardwareMap, IntakeActive.Color.None);
         drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true, true);
 
         waitForStart();

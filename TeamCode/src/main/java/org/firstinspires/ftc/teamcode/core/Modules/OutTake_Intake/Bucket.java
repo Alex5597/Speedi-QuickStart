@@ -23,6 +23,7 @@ public class Bucket implements Module {
         Wait
     }
 
+    boolean canScore = false;
     public static States state = States.Wait;
     IntakeActive intakeActiveSensor;
 
@@ -48,13 +49,22 @@ public class Bucket implements Module {
 
     @Override
     public void update() {
-        if (state == States.Wait)
+        if (state == States.Wait && !canScore)
             if (sensorBucket.getDistance(DistanceUnit.MM) <= 32)
                 if (intakeActiveSensor.getColor() == IntakeActive.Color.None) {
                     setState(States.Hold);
+                    canScore = true;
                     TeleOpBun.state = TeleOpBun.States.Samples;
                 }
         servoBucket.update();
+    }
+
+    public States getState() {
+        return state;
+    }
+
+    public void setCanScore(boolean canScore) {
+        this.canScore = canScore;
     }
 
     public double getDistanceFromSampleInBucket() {

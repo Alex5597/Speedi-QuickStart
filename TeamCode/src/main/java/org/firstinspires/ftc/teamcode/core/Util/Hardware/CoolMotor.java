@@ -81,6 +81,7 @@ public class CoolMotor {
     }
 
     public void setPowerForced(double power) {
+        this.power = power;
         if (power == 0)
             lastZeroTime = System.currentTimeMillis();
         if (Math.abs(power - lastPower) >= epsilon) {

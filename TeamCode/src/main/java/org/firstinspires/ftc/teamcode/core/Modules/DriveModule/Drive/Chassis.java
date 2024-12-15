@@ -122,7 +122,8 @@ public class Chassis implements Module {
             drive.scalarMultiply(0);
         }
 
-        setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
+        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
+        setMotorPower(drive);
     }
 
     public void driveFieldCentric(Gamepad gamepad, double angle) {
@@ -137,7 +138,8 @@ public class Chassis implements Module {
             drive.scalarMultiply(0);
         }
 
-        setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
+        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
+        setMotorPower(drive);
     }
 
     public double smoothControls(double value) {

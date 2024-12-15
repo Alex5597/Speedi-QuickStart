@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
@@ -19,6 +20,7 @@ import java.util.Queue;
 @TeleOp
 public class ChassisPIDTuner extends LinearOpMode {
     MecanumDrive drive;
+    LinearSlides slides;
 
     enum State {
         DRIVING,
@@ -35,6 +37,7 @@ public class ChassisPIDTuner extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new MecanumDrive(hardwareMap, startPose, telemetry, true);
+        slides = new LinearSlides(hardwareMap,true);
         state = State.AUTO;
         Queue<Pose> targetPositions = new LinkedList<>();
 

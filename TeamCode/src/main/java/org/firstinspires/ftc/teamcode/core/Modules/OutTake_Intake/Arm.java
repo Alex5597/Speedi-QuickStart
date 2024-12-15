@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Hardware.BetterServo;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 public class Arm implements Module {
-    BetterServo armServo;
+    public BetterServo armServo;
 
     public enum States {
         Collect,
@@ -18,7 +18,7 @@ public class Arm implements Module {
     States state = States.Collect;
 
     public Arm(HardwareMap hardwareMap) {
-        armServo = new BetterServo(hardwareMap.get(Servo.class, "A"), 5, 2.5, 10, Constants.ArmPoses.armCollectPose);
+        armServo = new BetterServo(hardwareMap.get(Servo.class, "A"), 3, 1.8, 3, Constants.ArmPoses.armCollectPose);
     }
 
     public void setState(States state) {

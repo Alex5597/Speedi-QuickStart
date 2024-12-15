@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.OpModes.TeleOps;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.IntakeActivePower.intakeScore;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LinearSlidePositions.slidesRetractedPose;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -7,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.core.Modules.Climb.ClimbModule;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Bucket;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Wrist;
 import org.firstinspires.ftc.teamcode.core.Robot;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
@@ -22,6 +26,9 @@ public class TeleOpBun extends LinearOpMode {
     ElapsedTime timerSpecimenLow = new ElapsedTime();
     ElapsedTime timerSampleHigh = new ElapsedTime();
     ElapsedTime timerSampleLow = new ElapsedTime();
+    ElapsedTime timer = new ElapsedTime();
+    ElapsedTime timerLift = new ElapsedTime();
+
 
     public enum States {
         Specimens,
@@ -29,6 +36,8 @@ public class TeleOpBun extends LinearOpMode {
     }
 
     public static States state = TeleOpBun.States.Specimens;
+    boolean canRetract = false;
+    boolean shouldRetract = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -49,19 +58,19 @@ public class TeleOpBun extends LinearOpMode {
         while (opModeIsActive()) {
             //Driver 1 Controls
 
-            if (gamepad1.right_bumper && gamepad1.left_bumper && gamepad1.left_trigger >= 0.4 && gamepad1.right_trigger >= 0.4)
+            if (gamepad1.dpad_up)
                 robot.drive.resetPosition(new Pose());
             robot.drive.motors.driveFieldCentric(gamepad1, robot.drive.getCurrentPos().getHeading());
 
             //Climb
             robot.climb.setState(ClimbModule.States.Waiting);
-            if (gamepad1.right_trigger >= 0.4) {
+            if (gamepad1.right_bumper) {
                 robot.climb.setState(ClimbModule.States.Climbing);
             }
-            if (gamepad1.left_bumper) {
+            if (gamepad1.left_trigger >= 0.4) {
                 robot.climb.setState(ClimbModule.States.ResetLeft);
             }
-            if (gamepad1.right_bumper) {
+            if (gamepad1.right_trigger >= 0.4) {
                 robot.climb.setState(ClimbModule.States.ResetRight);
             }
 
@@ -92,6 +101,9 @@ public class TeleOpBun extends LinearOpMode {
             }
             if (gamepad2.b) {
                 robot.setAction(Robot.Actions.Collect);
+            }
+            if (robot.intakeSample.getPower() == intakeScore) {
+                gamepad2.rumble(100);
             }
             switch (state) {
                 case Specimens:
@@ -137,11 +149,36 @@ public class TeleOpBun extends LinearOpMode {
                     }
                     break;
             }
-            if (gamepad2.left_stick_button)
+            if (gamepad2.left_stick_button) {
                 robot.setAction(Robot.Actions.SlidesRetracted);
-            if (gamepad2.right_stick_button)
+                if (robot.intakeSample.getColor() == IntakeActive.Color.None)
+                    canRetract = true;
+            }
+            if (gamepad2.right_stick_button) {
                 robot.setAction(Robot.Actions.SlidesExtended);
-            robot.slides.setTarget(robot.drive.motors.smoothControls(-gamepad2.right_stick_y));
+                if (robot.intakeSample.getColor() == IntakeActive.Color.None)
+                    canRetract = true;
+            }
+            if (!shouldRetract)
+                if (timer.milliseconds() >= 700 && canRetract && robot.intakeSample.canRetract()) {
+                    timer.reset();
+                    shouldRetract = true;
+                }
+            if (shouldRetract && timer.milliseconds() >= 300) {
+                if (canRetract && robot.intakeSample.canRetract()) {
+                    shouldRetract = false;
+                    robot.setAction(Robot.Actions.SlidesRetracted);
+                    gamepad1.rumble(500);
+                    canRetract = false;
+                } else
+                    shouldRetract = false;
+            }
+            if (gamepad2.right_stick_y != 0)
+                robot.slides.setTarget(robot.drive.motors.smoothControls(-gamepad2.right_stick_y));
+            if (gamepad1.left_bumper && timerLift.milliseconds() >= 200) {
+                robot.setAction(Robot.Actions.GOUP);
+                timerLift.reset();
+            }
 
             //Update
             robot.update();

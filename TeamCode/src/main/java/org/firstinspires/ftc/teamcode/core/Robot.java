@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import java.util.List;
 
 public class Robot {
-    ElapsedTime timerForOpeningClaw = new ElapsedTime(), timerForSlides = new ElapsedTime(), timerForWrist = new ElapsedTime();
+    ElapsedTime timerForOpeningClaw = new ElapsedTime(), timerForSlides = new ElapsedTime(), timerForWrist = new ElapsedTime(), timerLift = new ElapsedTime();
     public MecanumDrive drive;
     public Arm arm;
     public IntakeActive intakeSample;
@@ -43,30 +43,35 @@ public class Robot {
         ScoreSampleHigh,
         ScoreSampleLow,
         SlidesExtended,
-        SlidesRetracted
+        SlidesRetracted,
+        InstantPutWristDown,
+        InstantRetract,
+        GOUP
     }
 
     boolean shouldOpenClaw = false;
     boolean shouldMoveWristForCollect = false;
     boolean shouldMoveWristForTransfer = false;
     boolean shouldExtendLinkage = false;
+    boolean shouldExtend = false;
+    boolean shouldRaiseLiftHigh = false, shouldRaiseLiftLow = false;
 
     public Robot(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAutonomous, IntakeActive.Color allianceColor) {
         this.isAutonomous = isAutonomous;
         if (isAutonomous) {
             intakeSpecimen = new IntakePassive(hardwareMap, intakePassiveClosePose);
-            drive = new MecanumDrive(hardwareMap, startPose, telemetry, false, true);
+            drive = new MecanumDrive(hardwareMap, startPose, telemetry, true, true);
         } else {
             intakeSpecimen = new IntakePassive(hardwareMap, intakePassiveOpenPose);
             drive = new MecanumDrive(hardwareMap, startPose, telemetry, true, false);
         }
-        climb = new ClimbModule(hardwareMap);
+        climb = new ClimbModule(hardwareMap, telemetry);
         lift = new Lift(hardwareMap);
         lift.resetEnc();
         arm = new Arm(hardwareMap);
         intakeSample = new IntakeActive(hardwareMap, allianceColor);
-        wrist = new Wrist(hardwareMap);
-        slides = new LinearSlides(hardwareMap);
+        wrist = new Wrist(hardwareMap, isAutonomous);
+        slides = new LinearSlides(hardwareMap, isAutonomous);
         bucket = new Bucket(hardwareMap, intakeSample);
 
         allHubs = hardwareMap.getAll(LynxModule.class);
@@ -90,6 +95,18 @@ public class Robot {
             bucket.setState(Bucket.States.Wait);
             shouldMoveWristForTransfer = false;
         }
+        if (shouldExtend && timerForSlides.milliseconds() >= 400) {
+            slides.setState(LinearSlides.States.Extended);
+            shouldExtend = false;
+        }
+        if (shouldRaiseLiftHigh && timerLift.milliseconds() >= 300) {
+            lift.setState(Lift.States.HighChamber);
+            shouldRaiseLiftHigh = false;
+        }
+        if (shouldRaiseLiftLow && timerLift.milliseconds() >= 300) {
+            lift.setState(Lift.States.LowChamber);
+            shouldRaiseLiftLow = false;
+        }
         drive.update();
         wrist.update();
         arm.update();
@@ -98,6 +115,7 @@ public class Robot {
         intakeSample.update();
         slides.update();
         bucket.update();
+        climb.update();
 
         for (LynxModule hub : allHubs) {
             hub.clearBulkCache();
@@ -113,6 +131,7 @@ public class Robot {
             case Collect:
                 lift.setState(Lift.States.Collect);
                 arm.setState(Arm.States.Collect);
+                bucket.setCanScore(false);
                 bucket.setState(Bucket.States.Wait);
                 wrist.setState(Wrist.States.Wait);
                 TeleOpBun.state = TeleOpBun.States.Specimens;
@@ -120,7 +139,8 @@ public class Robot {
                 break;
             case ScoreSampleHigh:
                 slides.setState(LinearSlides.States.Aux);
-                if (lift.getState() != Lift.States.HighChamber) {
+                if (lift.getState() != Lift.States.HighBasket) {
+                    bucket.setCanScore(true);
                     wrist.setState(Wrist.States.Wait);
                     lift.setState(Lift.States.HighBasket);
                     arm.setState(Arm.States.Place);
@@ -134,52 +154,48 @@ public class Robot {
                 }
                 break;
             case ScoreSampleLow:
-                if (shouldExtendLinkage) {
-                    slides.setState(LinearSlides.States.Aux);
-                    shouldExtendLinkage = false;
-                    timerForSlides.reset();
-                } else if (timerForSlides.milliseconds() >= 500)
-                    if (lift.getState() != Lift.States.HighChamber) {
-                        wrist.setState(Wrist.States.Wait);
-                        lift.setState(Lift.States.LowBasket);
-                        arm.setState(Arm.States.Place);
-                        bucket.setState(Bucket.States.Hold);
-                    } else {
-                        wrist.setState(Wrist.States.Wait);
-                        lift.setState(Lift.States.LowBasket);
-                        arm.setState(Arm.States.Place);
-                        bucket.setState(Bucket.States.Wait);
-                        TeleOpBun.state = TeleOpBun.States.Specimens;
-                    }
+                slides.setState(LinearSlides.States.Aux);
+                if (lift.getState() != Lift.States.LowBasket) {
+                    bucket.setCanScore(true);
+                    wrist.setState(Wrist.States.Wait);
+                    lift.setState(Lift.States.LowBasket);
+                    arm.setState(Arm.States.Place);
+                    bucket.setState(Bucket.States.Hold);
+                } else {
+                    wrist.setState(Wrist.States.Wait);
+                    lift.setState(Lift.States.LowBasket);
+                    arm.setState(Arm.States.Place);
+                    bucket.setState(Bucket.States.Wait);
+                    TeleOpBun.state = TeleOpBun.States.Specimens;
+                }
                 break;
             case ScoreSpecimenHigh:
-                if (shouldExtendLinkage) {
-                    slides.setState(LinearSlides.States.Aux);
-                    shouldExtendLinkage = false;
-                    timerForSlides.reset();
-                } else if (timerForSlides.milliseconds() >= 500)
-                    if (lift.getState() != Lift.States.HighChamber) {
-                        lift.setState(Lift.States.HighChamber);
-                        arm.setState(Arm.States.Collect);
-                        wrist.setState(Wrist.States.Wait);
-                    } else {
-                        lift.setState(Lift.States.ScoreHighSpecimen);
-                        arm.setState(Arm.States.Collect);
-                        wrist.setState(Wrist.States.Wait);
-                        shouldOpenClaw = true;
-                        timerForOpeningClaw.reset();
-                    }
-                break;
-            case ScoreSpecimenLow:
-                if (lift.getState() != Lift.States.LowChamber) {
-                    lift.setState(Lift.States.LowChamber);
+                if (lift.getState() == Lift.States.Collect && !shouldRaiseLiftHigh) {
+                    intakeSpecimen.close();
                     arm.setState(Arm.States.Collect);
                     wrist.setState(Wrist.States.Wait);
+                    shouldRaiseLiftHigh = true;
+                    timerLift.reset();
                 } else {
+                    shouldOpenClaw = true;
+                    lift.setState(Lift.States.ScoreHighSpecimen);
+                    arm.setState(Arm.States.Collect);
+                    wrist.setState(Wrist.States.Wait);
+                    timerForOpeningClaw.reset();
+                }
+                break;
+            case ScoreSpecimenLow:
+                if (lift.getState() == Lift.States.Collect && !shouldRaiseLiftLow) {
+                    intakeSpecimen.close();
+                    arm.setState(Arm.States.Collect);
+                    wrist.setState(Wrist.States.Wait);
+                    shouldRaiseLiftLow = true;
+                    timerLift.reset();
+                } else {
+                    shouldOpenClaw = true;
                     lift.setState(Lift.States.Collect);
                     arm.setState(Arm.States.Collect);
                     wrist.setState(Wrist.States.Wait);
-                    shouldOpenClaw = true;
                     timerForOpeningClaw.reset();
                 }
                 break;
@@ -192,9 +208,25 @@ public class Robot {
                 timerForWrist.reset();
                 break;
             case SlidesRetracted:
-                wrist.setState(Wrist.States.Wait);
+                if (intakeSample.getColor() == IntakeActive.Color.Yellow)
+                    wrist.setState(Wrist.States.Transfer);
+                else
+                    wrist.setState(Wrist.States.Wait);
                 shouldMoveWristForTransfer = true;
                 timerForWrist.reset();
+                break;
+            case InstantPutWristDown:
+                wrist.setState(Wrist.States.Collect);
+                intakeSample.setState(IntakeActive.States.Collect);
+                shouldExtend = true;
+                timerForSlides.reset();
+                break;
+            case InstantRetract:
+                slides.setState(LinearSlides.States.Retracted);
+                wrist.setState(Wrist.States.Wait);
+                break;
+            case GOUP:
+                lift.setState(Lift.States.GOUP);
                 break;
         }
     }

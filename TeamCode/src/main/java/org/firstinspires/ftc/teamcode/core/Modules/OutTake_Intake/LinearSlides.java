@@ -16,6 +16,7 @@ public class LinearSlides implements Module {
     BetterServo linkageServo;
     States state = States.Retracted;
     double target;
+    boolean canRetract = true;
 
     public enum States {
         Extended,
@@ -23,8 +24,11 @@ public class LinearSlides implements Module {
         Aux
     }
 
-    public LinearSlides(HardwareMap hardwareMap) {
-        linkageServo = new BetterServo(hardwareMap.get(Servo.class, "LS"), slidesRetractedPose);
+    public LinearSlides(HardwareMap hardwareMap, boolean isAuto) {
+        if (isAuto)
+            linkageServo = new BetterServo(hardwareMap.get(Servo.class, "LS"), slidesRetractedPose);
+        else
+            linkageServo = new BetterServo(hardwareMap.get(Servo.class, "LS"));
         target = 0;
     }
 
@@ -47,9 +51,19 @@ public class LinearSlides implements Module {
     }
 
     public void setTarget(double input) {
+        if (input != 0)
+            canRetract = false;
         target = target + Range.scale(input, -1, 1, -0.008, 0.008);
         target = Range.clip(target, 0, 0.3);
         linkageServo.setPosition(target);
+    }
+
+    public boolean canRetract() {
+        return canRetract;
+    }
+
+    public double getTarget() {
+        return target;
     }
 
     @Override

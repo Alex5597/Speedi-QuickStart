@@ -8,29 +8,27 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.xDecelera
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yDeceleration;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.LowPassFilter;
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.core.Util.Hardware.VelocityAdapterForPinPointAndRev;
+import org.firstinspires.ftc.teamcode.core.Util.Hardware.VelocityAdapter;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 public class PinPointLocalizer implements Localizer {
     public GoBildaPinpointDriver odo;
     Telemetry telemetry;
-    Pose currentPosition, predictedPose;
+    Pose currentPosition, predictedPose, lastPosition;
     double lastRawHeadingVel = 0, headingVelOffset = 0;
     double headingVel = 0;
     Vector velocityVectorRaw = new Vector(0, 0, 0);
-    Vector velocityVector = new Vector(0, 0, 0), lastVelocityVector = new Vector(0, 0, 0);
+    Vector glideVector = new Vector(0, 0, 0), lastVelocityVector = new Vector(0, 0, 0);
     LowPassFilter xVelocityFilter = new LowPassFilter(0.8, 0), yVelocityFilter = new LowPassFilter(0.8, 0);
-    VelocityAdapterForPinPointAndRev adapterX = new VelocityAdapterForPinPointAndRev(), adapterY = new VelocityAdapterForPinPointAndRev();
+    VelocityAdapter velocityAdapter;
+    private boolean firstLoop = true;
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose) {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
@@ -48,6 +46,7 @@ public class PinPointLocalizer implements Localizer {
 
         odo.setPosition(startPose.toPose2D());
         currentPosition = startPose;
+        lastPosition = startPose;
         predictedPose = startPose;
     }
 
@@ -57,7 +56,7 @@ public class PinPointLocalizer implements Localizer {
 
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
 
-        odo.setEncoderResolution(8192.00 / (35.0 * Math.PI));//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL
+        odo.setEncoderResolution(8192.00 / (35.0 * Math.PI));//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL IN MM
 
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
@@ -70,34 +69,41 @@ public class PinPointLocalizer implements Localizer {
         odo.setPosition(startPose.toPose2D());
 
         currentPosition = startPose;
+        lastPosition = startPose;
         predictedPose = startPose;
     }
 
     @Override
     public void update() {
+        if (firstLoop) {
+            velocityAdapter = new VelocityAdapter();
+
+            xVelocityFilter.resetFilter(0);
+            yVelocityFilter.resetFilter(0);
+
+            firstLoop = false;
+        }
         odo.update();
 
         double angle = angleWrapper(odo.getHeading());
         Pose2D pose = odo.getPosition();
         currentPosition = new Pose(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), angle);
-
-        double xVelocity = (adapterX.getVelocityBasedOnTicks(-odo.getEncoderX())) * cmPerTickForward;
-        double yVelocity = (adapterY.getVelocityBasedOnTicks(odo.getEncoderY())) * cmPerTickForward;
-
-        velocityVectorRaw = new Vector(xVelocityFilter.getValue(xVelocity), yVelocityFilter.getValue(yVelocity));
-        Vector driveTrainvelocity = velocityVectorRaw.rotate(-currentPosition.getHeading()); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
-        lastVelocityVector = velocityVector;
-        velocityVector = new Vector(
-                Math.signum(driveTrainvelocity.getX()) * driveTrainvelocity.getX() * driveTrainvelocity.getX() / (2.00 * xDeceleration),
-                Math.signum(driveTrainvelocity.getY()) * driveTrainvelocity.getY() * driveTrainvelocity.getY() / (2.00 * yDeceleration),
+        Vector velocity = velocityAdapter.getVelocity(currentPosition);
+        velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()));
+        //Vector driveTrainvelocity = velocityVectorRaw.rotate(0); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
+        lastVelocityVector = velocityVectorRaw;
+        glideVector = new Vector(
+                Math.signum(velocityVectorRaw.getX()) * velocityVectorRaw.getX() * velocityVectorRaw.getX() / (2.0 * xDeceleration),
+                Math.signum(velocityVectorRaw.getY()) * velocityVectorRaw.getY() * velocityVectorRaw.getY() / (2.0 * yDeceleration),
                 0);
-        velocityVector = velocityVector.rotate(-currentPosition.getHeading());
-        predictedPose = currentPosition.add(velocityVector.toPose());
+        //glideVector = glideVector.rotate(angleWrapper(-currentPosition.getHeading()));
+        predictedPose = currentPosition.add(glideVector.toPose());
+        lastPosition = currentPosition;
 
         if (predictedPose.isNaN())
             predictedPose = currentPosition;
-        if (velocityVector.isNaN())
-            velocityVector = lastVelocityVector;
+        if (glideVector.isNaN())
+            glideVector = lastVelocityVector;
     }
 
     @Override
@@ -125,6 +131,11 @@ public class PinPointLocalizer implements Localizer {
         }
 
         odo.setPosition(startPose.toPose2D());
+
+        velocityAdapter = new VelocityAdapter();
+        xVelocityFilter.resetFilter(0);
+        yVelocityFilter.resetFilter(0);
+        lastPosition = startPose;
     }
 
     @Override
@@ -136,8 +147,8 @@ public class PinPointLocalizer implements Localizer {
     }
 
     @Override
-    public Vector getVelocityVector() {
-        return velocityVector;
+    public Vector getGlideVector() {
+        return glideVector;
     }
 
     @Override

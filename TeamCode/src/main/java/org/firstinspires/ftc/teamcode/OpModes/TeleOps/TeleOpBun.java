@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.core.Modules.Climb.ClimbModule;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Bucket;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Lift;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Wrist;
 import org.firstinspires.ftc.teamcode.core.Robot;
@@ -105,6 +106,10 @@ public class TeleOpBun extends LinearOpMode {
             if (robot.intakeSample.getPower() == intakeScore) {
                 gamepad2.rumble(100);
             }
+            if (gamepad1.dpad_left)
+                robot.lift.setState(Lift.States.Reset);
+            if (gamepad1.dpad_right)
+                robot.lift.resetEnc();
             switch (state) {
                 case Specimens:
 

@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_GoToPoint;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_finalAdj;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_finalAdj;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Forward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Heading;
@@ -28,7 +30,6 @@ import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFo
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
-import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
@@ -51,8 +52,7 @@ public class MecanumDrive implements Module {
     ElapsedTime timer = new ElapsedTime(), failsafeTimer = new ElapsedTime();
     Queue<Pose> targetPositions = new LinkedList<>();
     boolean isOnlyTarget = false;
-    private static PIDController xPid = new PIDController(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-    private static PIDController yPid = new PIDController(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+    private static PIDController tPid = new PIDController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
     private static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     ElapsedTime timerSinceStart = new ElapsedTime();
     public boolean robotIsStuck = false;
@@ -77,7 +77,7 @@ public class MecanumDrive implements Module {
 
     public MecanumDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, true);
+        motors = new Chassis(hardwareMap, false);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
 
         if (useDashboard)
@@ -85,13 +85,10 @@ public class MecanumDrive implements Module {
         timer.reset();
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
-
-        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+        tPid.setPID(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
-        xPid.reset();
-        yPid.reset();
+        tPid.reset();
         hPid.reset();
 
     }
@@ -99,7 +96,7 @@ public class MecanumDrive implements Module {
     public MecanumDrive(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
 
-        motors = new Chassis(hardwareMap, true);
+        motors = new Chassis(hardwareMap, false);
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
 
         if (useDashboard)
@@ -107,13 +104,10 @@ public class MecanumDrive implements Module {
         timer.reset();
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
-
-        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+        tPid.setPID(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
-        xPid.reset();
-        yPid.reset();
+        tPid.reset();
         hPid.reset();
 
     }
@@ -128,13 +122,10 @@ public class MecanumDrive implements Module {
         timer.reset();
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
-
-        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+        tPid.setPID(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
-        xPid.reset();
-        yPid.reset();
+        tPid.reset();
         hPid.reset();
 
     }
@@ -146,6 +137,7 @@ public class MecanumDrive implements Module {
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         trajectoryDone = false;
+        timerSinceStart.reset();
     }
 
     /**
@@ -161,6 +153,7 @@ public class MecanumDrive implements Module {
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         trajectoryDone = false;
+        timerSinceStart.reset();
     }
 
     public void setRunMode(RunMode runMode) {
@@ -192,6 +185,18 @@ public class MecanumDrive implements Module {
         timerSinceStart.reset();
         customTolerance = true;
         this.tolerance = tolerance;
+
+
+        motors.setMotorPower(new Vector(0, 0, 0));
+        customTolerance = false;
+        resetMultipliers();
+        motors.setMinPowersToOvercomeFriction();
+
+        tPid.setPID(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
+        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+
+        tPid.reset();
+        hPid.reset();
     }
 
     public void setTargetsList(Queue<Pose> targetPositions) {
@@ -219,61 +224,63 @@ public class MecanumDrive implements Module {
                 DrawRobot.drawDebug(this);
             }
             if (!trajectoryDone) {
-                if (!customTolerance) {
-                    if (runMode != RunMode.MANUAL && (
-                            (reachedTarget(4) && reachedHeading(4) && !waitingTimer //&& stopped()
-                                    || isStuck()))) {
-                        motors.setMotorPower(new Vector(0, 0, 0));
-                        customTolerance = false;
-                        tolerance = new Pose();
-                        resetMultipliers();
-                        motors.setMinPowersToOvercomeFriction();
+                if (runMode != RunMode.MANUAL) {
+                    if (!customTolerance) {
+                        if ((reachedTarget(4) && reachedHeading(3) && !waitingTimer && stopped())
+                                || isStuck()) {
+                            motors.setMotorPower(new Vector(0, 0, 0));
+                            customTolerance = false;
+                            tolerance = new Pose();
+                            resetMultipliers();
+                            motors.setMinPowersToOvercomeFriction();
 
-                        if (!targetPositions.isEmpty()) {
-                            timerSinceStart.reset();
-                            lastTarget = targetPose;
-                            startAngleTraj = localizer.getPoseEstimate().getHeading();
-                            targetPose = targetPositions.poll();
-                        } else {
-                            xPid.reset();
-                            yPid.reset();
-                            hPid.reset();
-                            motors.setMaxPower(1);
+                            if (!targetPositions.isEmpty()) {
+                                timerSinceStart.reset();
+                                lastTarget = targetPose;
+                                startAngleTraj = localizer.getPoseEstimate().getHeading();
+                                targetPose = targetPositions.poll();
+                            } else {
+                                tPid.reset();
+                                hPid.reset();
+                                motors.setMaxPower(1);
 
-                            trajectoryDone = true;
-                        }
-                    } else
-                        updatePowerVector();
-                } else if ((getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && reachedHeading(tolerance.getHeading()))) {
-                    motors.setMotorPower(new Vector(0, 0, 0));
-                    customTolerance = false;
-                    tolerance = new Pose();
-                    resetMultipliers();
-                    motors.setMinPowersToOvercomeFriction();
-
-                    if (!targetPositions.isEmpty()) {
-                        timerSinceStart.reset();
-                        lastTarget = targetPose;
-                        startAngleTraj = localizer.getPoseEstimate().getHeading();
-                        targetPose = targetPositions.poll();
+                                timerResetedFailsafe = false;
+                                trajectoryDone = true;
+                            }
+                        } else
+                            updatePowerVector();
                     } else {
-//                        xPid.reset();
-//                        yPid.reset();
-//                        hPid.reset();
-                        motors.setMaxPower(1);
+                        if ((getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && reachedHeading(tolerance.getHeading()) && stopped())
+                                || isStuck()) {
+                            motors.setMotorPower(new Vector(0, 0, 0));
+                            customTolerance = false;
+                            tolerance = new Pose();
+                            resetMultipliers();
+                            motors.setMinPowersToOvercomeFriction();
 
-                        trajectoryDone = true;
-                        telemetry.addLine("A intrat pe aici");
-                        telemetry.update();
+                            if (!targetPositions.isEmpty()) {
+                                timerSinceStart.reset();
+                                lastTarget = targetPose;
+                                startAngleTraj = localizer.getPoseEstimate().getHeading();
+                                targetPose = targetPositions.poll();
+                            } else {
+                                tPid.reset();
+                                hPid.reset();
+                                motors.setMaxPower(1);
+
+                                timerResetedFailsafe = false;
+                                trajectoryDone = true;
+                            }
+                        } else
+                            updatePowerVector();
                     }
-                } else
-                    updatePowerVector();
+                }
                 if (robotIsStuck) {
                     robotIsStuck = false;
                     trajectoryDone = true;
                 }
-                motors.update();
             }
+            motors.update();
         } else {
             localizer.updateOnlyImu();
             motors.update();
@@ -293,51 +300,53 @@ public class MecanumDrive implements Module {
                     if (waitingTimer && timer.milliseconds() >= targetPose.getY())
                         waitingTimer = false;
                 } else {
-                    //Pose currentPose = localizer.getPredictedPoseEstimate();
-                    Pose currentPose = localizer.getPoseEstimate();
-                    Vector err = targetPose.subtract(currentPose).toVec().rotate(currentPose.getHeading());
+                    Pose currentPose = localizer.getPredictedPoseEstimate();
+                    Vector err = targetPose.subtract(currentPose).toVec();
 
-
-                    if (getXError() <= 5) {
+                    if (err.getMagnitude() <= 12 && angleWrapper(err.getHeading()) <= Math.toRadians(12)) {
+                        motors.resetMinPowersToOvercomeFriction();
+                        resetMultipliers();
+                        tPid.setPID(tPIDCoeff_finalAdj.p, tPIDCoeff_finalAdj.i, tPIDCoeff_finalAdj.d);
+                        hPid.setPID(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d);
+                    } else {
+                        motors.setMinPowersToOvercomeFriction();
+                        tPid.setPID(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d);
+                        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+                    }
+                    if (getXError() <= 5)
                         lateralMultiplier = Lateral;
-                        xPid.setPID(xPIDCoeff_finalAdj.p, xPIDCoeff_finalAdj.i, xPIDCoeff_finalAdj.d);
-                    } else
-                        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-                    if (getYError() <= 5) {
+                    if (getYError() <= 5)
                         forwardMultiplier = Forward;
-                        yPid.setPID(yPIDCoeff_finalAdj.p, yPIDCoeff_finalAdj.i, yPIDCoeff_finalAdj.d);
-                    } else
-                        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
-//                    if (Math.abs(angleWrapper(err.getHeading())) <= Math.toRadians(5)) {
-//                        headignMultiplier = Heading;
-//                        hPid.setPID(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d);
-//                    } else
-                    hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+                    if (angleWrapper(err.getHeading()) <= Math.toRadians(5))
+                        headignMultiplier = Heading;
+                    double distance = Math.hypot(err.getX(), err.getY());
 
-                    double xPower = xPid.calculate(-err.getX(), 0);
-                    double yPower = yPid.calculate(-err.getY(), 0);
-                    powerVector = new Vector(xPower, yPower);
+                    double calculatedCos = err.getX() / distance;
+                    double calculatedSin = err.getY() / distance;
+                    double translationalPower = tPid.calculate(-distance, 0);
+                    powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).rotate(currentPose.getHeading());
+
                     double headingDiff = angleWrapper(err.getHeading());
                     double headingPower = -hPid.calculate(-headingDiff, 0);
-                    powerVector = new Vector(powerVector.getX(), powerVector.getY(), headingPower);
-                    if (Math.abs(powerVector.getX()) + Math.abs(powerVector.getY()) + Math.abs(powerVector.getHeading()) > 1.2)
-                        powerVector = powerVector.scaleToMagnitude_AngularAsWell(1.2);
-
+                    powerVector.setHeading(headingPower);
+                    if (Math.abs(powerVector.getX()) + Math.abs(powerVector.getY()) + Math.abs(powerVector.getHeading()) > 1)
+                        powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
                     powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headignMultiplier);
-                    //motors.setMotorPower(new Vector[]{new Vector(powerVector.getX(), powerVector.getY() + powerVector.getHeading()), new Vector(powerVector.getX(), powerVector.getY() - powerVector.getHeading())});
-                    motors.setMotorPower(powerVector);
+                    motors.setMotorPower(new Vector[]{new Vector(powerVector.getX(), powerVector.getY() + powerVector.getHeading()), new Vector(powerVector.getX(), powerVector.getY() - powerVector.getHeading())});
                 }
                 break;
             case Spline:
-                Vector power = follower.getMotorPower();
-                if (!power.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE)))
-                    //motors.setMotorPower(new Vector[]{new Vector(powerVector.getX(), powerVector.getY() + powerVector.getHeading()), new Vector(powerVector.getX(), powerVector.getY() - powerVector.getHeading())});
-                    motors.setMotorPower(power);
-                else
-                    setTargetPose(targetPose);
+                Vector followerPower = follower.getMotorPower();
+                if (!followerPower.isNaN()) {
+                    if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE)))
+                        motors.setMotorPower(new Vector[]{new Vector(followerPower.getX(), followerPower.getY() + followerPower.getHeading()), new Vector(followerPower.getX(), followerPower.getY() - followerPower.getHeading())});
+                        //motors.setMotorPower(followerPower);
+                    else
+                        setTargetPose(targetPose);
+                }
                 break;
             case MANUAL:
-                motors.setMotorPower(speedVector);
+                motors.setMotorPowerForced(speedVector);
                 break;
         }
     }
@@ -382,7 +391,7 @@ public class MecanumDrive implements Module {
     }
 
     public boolean isStuck() {
-        if (timerSinceStart.seconds() >= 1 && localizer.getVelocity().getMagnitude() <= velocityThreshold && !timerResetedFailsafe) {
+        if (timerSinceStart.seconds() >= 1 && stopped() && !timerResetedFailsafe) {
             timerResetedFailsafe = true;
             failsafeTimer.reset();
         }
@@ -486,8 +495,7 @@ public class MecanumDrive implements Module {
         motors.setMotorPower(0, 0, 0, 0);
         localizer.resetPosition(newPose);
         timer.reset();
-        xPid.reset();
-        yPid.reset();
+        tPid.reset();
         hPid.reset();
     }
 
@@ -506,8 +514,7 @@ public class MecanumDrive implements Module {
 
         targetPose = startPose;
         timer.reset();
-        xPid.reset();
-        yPid.reset();
+        tPid.reset();
         hPid.reset();
     }
 
@@ -522,42 +529,3 @@ public class MecanumDrive implements Module {
         return localizer;
     }
 }
-/*
-                    Vector[] finalPower = new Vector[]{new Vector(0, 0), new Vector(0, 0)};
-
-                    Pose currentPose = localizer.getPredictedPoseEstimate();
-                    Pose err = targetPose.subtract(currentPose);
-
-                    xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-                    yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
-                    double xPower = xPid.calculate(-err.getX(), 0);
-                    double yPower = yPid.calculate(-err.getY(), 0);
-                    Vector correctionVector = new Vector(xPower, yPower);
-
-                    if (correctionVector.getMagnitude() >= 1) {
-                        if (Math.abs(angleWrapper(err.getHeading())) >= Math.toRadians(25))
-                            correctionVector = correctionVector.scaleToMagnitude(0.85);
-                        else
-                            correctionVector = correctionVector.scaleToMagnitude(1);
-                    }
-                    finalPower[0] = correctionVector;
-                    finalPower[1] = correctionVector;
-
-                    double headingDiff = angleWrapper(err.getHeading());
-                    hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
-                    double headingPower = -hPid.calculate(-headingDiff, 0);//* (Math.abs(headingDiff) >= Math.toRadians(5) ? 2 : 1);
-                    Vector headingVector = new Vector(1, 1).rotate(Math.toRadians(-90)).scalarMultiply(Range.clip(headingPower, -1, 1)).rotate(-currentPose.getHeading());
-
-                    Vector leftSideVector = finalPower[0].add(headingVector);
-                    Vector rightSideVector = finalPower[1].subtract(headingVector);
-                    if (leftSideVector.getMagnitude() > 1 || rightSideVector.getMagnitude() > 1) {
-                        double scalar = Math.min(Vector.findScaleFactor(leftSideVector, headingVector), Vector.findScaleFactor(rightSideVector, headingVector)); //TODO POSIBIL max IN LOC DE min
-                        headingVector = headingVector.scalarMultiply(scalar);
-                        motors.setMotorPower(new Vector[]{finalPower[0].add(headingVector), finalPower[1].subtract(headingVector)}, currentPose.getHeading());
-                        return;
-                    } else {
-                        finalPower[0] = finalPower[0].add(headingVector);
-                        finalPower[1] = finalPower[1].subtract(headingVector);
-                    }
-                    motors.setMotorPower(finalPower, currentPose.getHeading());
-                    */

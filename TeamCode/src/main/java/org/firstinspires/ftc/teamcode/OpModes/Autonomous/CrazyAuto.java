@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.OpModes.Autonomous;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headignMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
 
@@ -16,20 +15,26 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.core.Modules.Climb.ClimbModule;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.IntakeActive;
 import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.Wrist;
 import org.firstinspires.ftc.teamcode.core.Robot;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
+import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Autonomous
-public class AutoSpecimen extends LinearOpMode {
-    Robot robot;
+public class CrazyAuto extends LinearOpMode {
     ElapsedTime timer = new ElapsedTime();
+    Robot robot;
     int state = 0;
     int i = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
-        robot = new Robot(hardwareMap, new Pose(), telemetry, true, IntakeActive.Color.Red);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        robot = new Robot(hardwareMap, new Pose(), telemetry, true, IntakeActive.Color.Blue);
+        BezierSpline splineFromChamberToFirstSample = new BezierSpline(Math.toRadians(120), new CubicBezierCurve(new Vector(-20, 77.5), new Vector(-20, 60), new Vector(15, 45), new Vector(31.5, 75)));
 
         while (!isStarted() || isStopRequested()) {
             robot.climb.setState(ClimbModule.States.Waiting);
@@ -47,15 +52,11 @@ public class AutoSpecimen extends LinearOpMode {
             e.printStackTrace();
         }
         robot.drive.localizer.odo.setPosition(new Pose2D(DistanceUnit.CM, 0, 0, AngleUnit.RADIANS, 0));
-        telemetry.addLine("GATA");
-        telemetry.update();
 
         waitForStart();
         robot.setAction(Robot.Actions.ScoreSpecimenHigh);
-        robot.drive.setMaxPower(0.4);
-        robot.drive.setTargetPose(new Pose(-15, 77.5, 0));
-
-        timer.reset();
+        robot.drive.setMaxPower(0.85);
+        robot.drive.setTargetPose(new Pose(-35, 77.5, 0));
 
         while (opModeIsActive()) {
             switch (state) {
@@ -68,144 +69,126 @@ public class AutoSpecimen extends LinearOpMode {
                 case 1:
                     if (robot.isClawOpened()) {
                         robot.setAction(Robot.Actions.Collect);
-                        robot.drive.setTargetPose(new Pose(35, 48, Math.toRadians(0)));
-                        state = 115;
-                    }
-                    break;
-                case 115:
-                    if (robot.drive.reachedTarget(5)) {
-                        headignMultiplier = 3;
-                        robot.drive.setTargetPose(new Pose(50, 40, Math.toRadians(180)));
-                        state = 2;
-                    }
-                    break;
-                case 2:
-                    if (robot.drive.isDone()) {
-                        headignMultiplier = 4;
-                        forwardMultiplier = 3;
-                        robot.drive.setTargetPose(new Pose(50, 130, Math.toRadians(180)));
-                        robot.climb.setState(ClimbModule.States.AutoClimb, 4.3);
+                        //robot.drive.setSpline_withSlowerHeadingChange(splineFromChamberToFirstSample, 1);
+                        headignMultiplier = 0.3;
+                        robot.drive.setTargetPose(new Pose(21, 78, Math.toRadians(130)), new Pose(2, 3, 6));
                         timer.reset();
                         state++;
                     }
                     break;
+                case 2:
+                    if (timer.milliseconds() >= 1000) {
+                        robot.slides.setState(LinearSlides.States.Extended);
+                        robot.wrist.setState(Wrist.States.Collect);
+                        state++;
+                    }
+                    break;
                 case 3:
-                    if (robot.drive.reachedTarget(5)) {
-                        robot.drive.setTargetPose(new Pose(70, 120, Math.toRadians(180)));
+                    if (robot.drive.isDone()) {
+                        robot.drive.setTargetPose(new Pose(21, 40, Math.toRadians(70)), new Pose(6, 6, 3));
                         state++;
                     }
                     break;
                 case 4:
-                    if (robot.drive.reachedTarget(5)) {
-                        robot.slides.setState(LinearSlides.States.Extended);
-                        robot.drive.setTargetPose(new Pose(70, 30, Math.toRadians(180)));
+                    if (robot.drive.isDone()) {
+                        robot.wrist.setState(Wrist.States.Wait);
+                        robot.drive.setTargetPose(new Pose(48, 77, Math.toRadians(130)), new Pose(1.5, 5, 3));
                         state++;
+                        timer.reset();
                     }
                     break;
                 case 5:
-                    if (robot.drive.reachedTarget(4)) {
-                        robot.slides.setState(LinearSlides.States.Retracted);
-                        robot.drive.setTargetPose(new Pose(80, 120, Math.toRadians(180)));
+                    if (timer.milliseconds() >= 900) {
+                        robot.wrist.setState(Wrist.States.Collect);
                         state++;
                     }
                     break;
                 case 6:
-                    if (robot.drive.reachedTarget(6)) {
-                        robot.drive.setTargetPose(new Pose(100, 120, Math.toRadians(180)));
+                    if (robot.drive.isDone()) {
+                        robot.drive.setTargetPose(new Pose(48, 35, Math.toRadians(70)), new Pose(6, 6, 5));
                         state++;
                     }
                     break;
                 case 7:
-                    if (robot.drive.reachedTarget(5)) {
-                        robot.slides.setState(LinearSlides.States.Extended);
-                        robot.drive.setTargetPose(new Pose(95, 30, Math.toRadians(180)));
+                    if (robot.drive.isDone()) {
+                        robot.wrist.setState(Wrist.States.Wait);
+                        robot.drive.setTargetPose(new Pose(73.5, 77, Math.toRadians(130)), new Pose(1.5, 5, 3));
                         state++;
+                        timer.reset();
                     }
                     break;
                 case 8:
-                    if (robot.drive.reachedTarget(6)) {
-                        robot.slides.setState(LinearSlides.States.Retracted);
-                        robot.drive.setTargetPose(new Pose(95, 120, Math.toRadians(180)));
+                    if (timer.milliseconds() >= 901) {
+                        robot.wrist.setState(Wrist.States.Collect);
                         state++;
                     }
                     break;
                 case 9:
-                    if (robot.drive.reachedTarget(4.5) && robot.drive.reachedHeading(5)) {
-                        robot.drive.setTargetPose(new Pose(117, 120, Math.toRadians(180)), new Pose(5, 5, 5));
-
+                    if (robot.drive.isDone()) {
+                        robot.drive.setTargetPose(new Pose(73.5, 28, Math.toRadians(70)), new Pose(5, 5, 5));
                         state++;
                     }
                     break;
                 case 10:
                     if (robot.drive.isDone()) {
-                        robot.drive.setMaxPower(0.25);
-                        robot.slides.setState(LinearSlides.States.Extended);
-                        robot.drive.setTargetPose(new Pose(117.5, 25, Math.toRadians(180)));
-                        timer.reset();
+                        robot.slides.setState(LinearSlides.States.Retracted);
+                        robot.wrist.setState(Wrist.States.Wait);
+                        robot.drive.setTargetPose(new Pose(50, 2, Math.toRadians(180)), new Pose(3, 1, 3));
+                        headignMultiplier = 6;
                         state++;
                     }
                     break;
                 case 11:
-                    if (robot.drive.reachedTarget(5) || timer.seconds() >= 2) {
-                        robot.slides.setState(LinearSlides.States.Retracted);
-                        robot.drive.setTargetPose(new Pose(50, 2.5, Math.toRadians(180)), new Pose(3, 1, 3));
-                        robot.drive.setMaxPower(0.5);
-                        lateralMultiplier = 5;
-                        state++;
-                    }
-                    break;
-                case 12:
                     if (robot.drive.isDone()) {
                         robot.setAction(Robot.Actions.ScoreSpecimenHigh);
                         state++;
                         timer.reset();
                     }
                     break;
-                case 13:
-                    if (timer.milliseconds() >= 500) {
+                case 12:
+                    if (timer.milliseconds() >= 300) {
                         lateralMultiplier = 3;
                         headignMultiplier = 4;
-                        robot.drive.setMaxPower(0.9);
-                        robot.drive.setTargetPose(new Pose(-25 + 3.5 * i, 77, 0), new Pose(2.5, 1.5, 3));
+                        robot.drive.setMaxPower(1);
+                        robot.drive.setTargetPose(new Pose(-29 + 4.5 * i, 77, 0), new Pose(2, 1, 3));
                         state++;
                     }
                     break;
-                case 14:
+                case 13:
                     if (robot.drive.isDone()) {
                         robot.setAction(Robot.Actions.ScoreSpecimenHigh);
-                        if (i == 2)
-                            state = 16;
+                        if (i == 3)
+                            state = 15;
                         else
                             state++;
                         timer.reset();
                     }
                     break;
-                case 15:
-                    if (robot.isClawOpened() && timer.milliseconds() >= 200) {
+                case 14:
+                    if (robot.isClawOpened() && timer.milliseconds() >= 100) {
                         robot.setAction(Robot.Actions.Collect);
                         headignMultiplier = 4.5;
                         lateralMultiplier = 3.5;
-                        robot.drive.setTargetPose(new Pose(50, 2.5, Math.toRadians(180)), new Pose(2.5, 0.95, 3));
-                        robot.drive.setMaxPower(0.9);
+                        robot.drive.setTargetPose(new Pose(50, 2, Math.toRadians(180)), new Pose(3, 1, 3));
+                        robot.drive.setMaxPower(1);
                         i++;
-                        state = 12;
+                        state = 11;
                     }
                     break;
-                case 16:
+                case 15:
                     if (robot.isClawOpened()) {
                         lateralMultiplier = 3;
                         robot.drive.setTargetPose(new Pose(50, 40, 0));
-                        robot.slides.setState(LinearSlides.States.Extended);
                         robot.setAction(Robot.Actions.Collect);
+                        robot.slides.setState(LinearSlides.States.Extended);
+                        robot.wrist.setState(Wrist.States.Park);
                         state++;
                     }
                     break;
             }
+            if (robot.intakeSample.getPower() == Constants.IntakeActivePower.intakeScore)
+                robot.intakeSample.setState(IntakeActive.States.Wait);
             robot.update();
-            telemetry.addData("Velocity", robot.drive.localizer.getVelocity());
-            telemetry.addData("Stuck", robot.drive.robotIsStuck);
-            telemetry.addData("Current state", state);
-            telemetry.update();
         }
     }
 }

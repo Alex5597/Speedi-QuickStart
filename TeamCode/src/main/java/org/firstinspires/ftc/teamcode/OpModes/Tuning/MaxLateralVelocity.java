@@ -16,27 +16,29 @@ public class MaxLateralVelocity extends LinearOpMode {
     MecanumDrive drive;
     LinearSlides slides;
     IntakeActive intakeActive;
-    double accelerationTime = 1500; //MS
+    double accelerationTime = 2000; //MS
     double maxVelocity = -1;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        slides = new LinearSlides(hardwareMap,true);
-        intakeActive = new IntakeActive(hardwareMap, IntakeActive.Color.None);
+        slides = new LinearSlides(hardwareMap, true);
         drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true, true);
-
+        telemetry.addData("Velocity", drive.localizer.getVelocity().getY());
+        telemetry.update();
         waitForStart();
         drive.motors.setMotorPower(1, -1, -1, 1);
 
         long startTime = System.currentTimeMillis();
         while (opModeIsActive()) {
-            maxVelocity = Math.max(drive.getLocalizerInstance().getVelocity().getX(), maxVelocity);
+            drive.update();
+            telemetry.addData("Velocity", drive.localizer.getVelocity().getX());
+            telemetry.update();
+            maxVelocity = Math.max(drive.localizer.getVelocity().getX(), maxVelocity);
             if (System.currentTimeMillis() - startTime > accelerationTime) {
                 drive.motors.setMotorPower(0, 0, 0, 0);
                 break;
             }
-            drive.localizer.update();
         }
 
         while (opModeIsActive()) {

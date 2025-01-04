@@ -83,12 +83,14 @@ public class Lift implements Module {
                 break;
             case Reset:
                 liftMotor.setPowerForced(-0.3);
+                PIDFController.disable();
                 break;
         }
     }
 
     public void resetEnc() {
         liftMotor.setPowerForced(0);
+        PIDFController.setDesired_Position(0);
 
         liftMotor.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         liftMotor.motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

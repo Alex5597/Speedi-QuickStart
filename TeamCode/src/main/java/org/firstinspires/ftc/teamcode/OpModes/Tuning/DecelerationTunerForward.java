@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.OpModes.Tuning;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.velocityThreshold;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yMaxVelocity;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -8,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
@@ -19,6 +23,7 @@ public class DecelerationTunerForward extends LinearOpMode {
     FtcDashboard dash;
 
     MecanumDrive drive;
+    LinearSlides slides;
     ElapsedTime timer = new ElapsedTime();
 
     public static double accelerationTime = 1000;//MS
@@ -35,8 +40,8 @@ public class DecelerationTunerForward extends LinearOpMode {
         dash = FtcDashboard.getInstance();
 
         telemetry = new MultipleTelemetry(telemetry, dash.getTelemetry());
-
-        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry,true);
+        slides = new LinearSlides(hardwareMap, true);
+        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry, true);
         drive.setRunMode(MecanumDrive.RunMode.MANUAL);
         waitForStart();
 
@@ -47,25 +52,23 @@ public class DecelerationTunerForward extends LinearOpMode {
 
         long startTime = System.currentTimeMillis();
         while (opModeIsActive() && !isStopRequested()) {
-
+            drive.update();
             switch (step) {
                 case 0:
-                    if (System.currentTimeMillis() - startTime <= accelerationTime) {
-                        drive.setSpeedVector(new Vector(0, 1, 0));
-                        drive.updatePowerVector();
-                    } else {
+                    if (timer.milliseconds() <= accelerationTime) {
+                        drive.motors.setMotorPower(1, 1, 1, 1);
+                    } else if (timer.milliseconds() >= 500) {
                         step++;
                         timer.reset();
                         velocityAtStop = drive.localizer.getVelocity().getY();
-                        drive.setSpeedVector(new Vector(0, 0, 0));
-                        drive.updatePowerVector();
+                        drive.motors.setMotorPower(0, 0, 0, 0);
                     }
                     break;
                 case 1:
-                    if (drive.localizer.getVelocity().getMagnitude() <= 0.001) {
+                    if (drive.localizer.getVelocity().getMagnitude() <= velocityThreshold) {
                         step++;
                         deltaTime = timer.seconds();
-                        deceleration = velocityAtStop / deltaTime;
+                        deceleration = yMaxVelocity / deltaTime;
                     }
                     break;
             }

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.OpModes.Testing.ChassisTests;
+package org.firstinspires.ftc.teamcode.OpModes.Testing.LocalizerTest;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.Chassis;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.TwoWheelLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
+import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 
 @TeleOp
 public class TestPredictedPose extends LinearOpMode {
@@ -23,6 +24,7 @@ public class TestPredictedPose extends LinearOpMode {
 
         while (opModeIsActive()) {
             chassis.drive(gamepad1);
+            chassis.update();
             localizer.update();
             telemetry.addData("Pose", localizer.getPoseEstimate().toString());
             telemetry.addData("Predicted pose", localizer.getPredictedPoseEstimate().toString());

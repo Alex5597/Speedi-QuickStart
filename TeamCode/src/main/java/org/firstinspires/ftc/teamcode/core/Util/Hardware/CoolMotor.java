@@ -74,7 +74,7 @@ public class CoolMotor {
             return;
         }
         power = Range.clip(power, -1.0, 1.0);
-        double m = (System.currentTimeMillis() > SWITCH_FROM_STATIC_TO_KINETIC_FRICTION + lastZeroTime ? minPowerToOvercomeKineticFriction : minPowerToOvercomeStaticFriction) * (13.5 / Globals.voltage);
+        double m = (System.currentTimeMillis() > SWITCH_FROM_STATIC_TO_KINETIC_FRICTION + lastZeroTime ? minPowerToOvercomeKineticFriction : minPowerToOvercomeStaticFriction) * (12.0 / Globals.voltage);
         power *= 1 - m;
         power = power + m * Math.signum(power);
         this.power = power * k + this.lastPower * (1 - k);

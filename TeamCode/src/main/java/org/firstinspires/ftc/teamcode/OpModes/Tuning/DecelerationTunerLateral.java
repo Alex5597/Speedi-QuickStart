@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.OpModes.Tuning;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.velocityThreshold;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.xMaxVelocity;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yMaxVelocity;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -8,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake.LinearSlides;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
@@ -27,7 +32,7 @@ public class DecelerationTunerLateral extends LinearOpMode {
 
     private double deceleration;
     private double deltaTime;
-
+    LinearSlides slides;
     int step = 0;
 
     @Override
@@ -35,8 +40,8 @@ public class DecelerationTunerLateral extends LinearOpMode {
         dash = FtcDashboard.getInstance();
 
         telemetry = new MultipleTelemetry(telemetry, dash.getTelemetry());
-
-        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry,true);
+        slides = new LinearSlides(hardwareMap, true);
+        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry, true);
         drive.setRunMode(MecanumDrive.RunMode.MANUAL);
         waitForStart();
 
@@ -44,32 +49,27 @@ public class DecelerationTunerLateral extends LinearOpMode {
 
         ElapsedTime loopTimer = new ElapsedTime();
         loopTimer.startTime();
-
-        long startTime = System.currentTimeMillis();
         while (opModeIsActive() && !isStopRequested()) {
+            drive.update();
             switch (step) {
                 case 0:
-                    if (System.currentTimeMillis() - startTime <= accelerationTime) {
-                        drive.setSpeedVector(new Vector(1, 0, 0));
-                        drive.updatePowerVector();
-                    } else {
+                    if (timer.milliseconds() <= accelerationTime) {
+                        drive.motors.setMotorPower(1, -1, -1, 1);
+                    } else if (timer.milliseconds() >= 500) {
                         step++;
                         timer.reset();
                         velocityAtStop = drive.localizer.getVelocity().getX();
-                        drive.setSpeedVector(new Vector(0, 0, 0));
-                        drive.updatePowerVector();
+                        drive.motors.setMotorPower(0, 0, 0, 0);
                     }
                     break;
                 case 1:
-                    if (drive.localizer.getVelocity().getMagnitude() <= 0.001) {
+                    if (drive.localizer.getVelocity().getMagnitude() <= velocityThreshold) {
                         step++;
                         deltaTime = timer.seconds();
-                        deceleration = velocityAtStop / deltaTime;
+                        deceleration = xMaxVelocity / deltaTime;
                     }
                     break;
             }
-
-            drive.update();
 
             telemetry.addData("pose", drive.localizer.getPoseEstimate());
             telemetry.addData("Step", step);

@@ -49,8 +49,7 @@ public class DrawRobot {
         drawRobot(pose, "#4CAF50");
         sendPacket();
     }
-
-    private static void drawRobot(Pose pose, String color) {
+    public static void drawRobot(Pose pose, String color) {
         if (packet == null) packet = new TelemetryPacket();
 
         packet.fieldOverlay().setStroke(color);
@@ -72,7 +71,7 @@ public class DrawRobot {
         packet.fieldOverlay().strokePolyline(poseTracker.getXPositionsArray(), poseTracker.getYPositionsArray());
     }
 
-    private static void sendPacket() {
+    public static void sendPacket() {
         if (packet != null) {
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
             packet = null;

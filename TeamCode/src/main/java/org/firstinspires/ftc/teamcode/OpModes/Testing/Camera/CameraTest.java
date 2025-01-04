@@ -23,18 +23,24 @@ package org.firstinspires.ftc.robotcontroller.external.samples;
 
 import android.util.Size;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.SortOrder;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.core.Util.Hardware.BetterServo;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.opencv.ColorBlobLocatorProcessor;
 import org.firstinspires.ftc.vision.opencv.ColorRange;
+import org.firstinspires.ftc.vision.opencv.ColorSpace;
 import org.firstinspires.ftc.vision.opencv.ImageRegion;
 import org.opencv.core.RotatedRect;
+import org.opencv.core.Scalar;
 
 import java.util.List;
 
@@ -61,12 +67,17 @@ import java.util.List;
  */
 
 
-@TeleOp(name = "Concept: Vision Color-Locator", group = "Concept")
-public class ConceptVisionColorLocator extends LinearOpMode
-{
+@TeleOp
+public class CameraTest extends LinearOpMode {
+    BetterServo clawIntake, pivotClaw, wristClaw_Intake, pivotIntake, armIntakeLeft, armIntakeRight, clawOuttake, wristClaw_Outtake, armOuttake;
+
     @Override
-    public void runOpMode()
-    {
+    public void runOpMode() {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        pivotIntake = new BetterServo(hardwareMap.get(Servo.class, "PI"));
+        wristClaw_Intake = new BetterServo(hardwareMap.get(Servo.class, "WCI"));
+        armIntakeLeft = new BetterServo(hardwareMap.get(Servo.class, "AIL"));
+        armIntakeRight = new BetterServo(hardwareMap.get(Servo.class, "AIR"));
         /* Build a "Color Locator" vision processor based on the ColorBlobLocatorProcessor class.
          * - Specify the color range you are looking for.  You can use a predefined color, or create you own color range
          *     .setTargetColorRange(ColorRange.BLUE)                      // use a predefined color match
@@ -108,9 +119,11 @@ public class ConceptVisionColorLocator extends LinearOpMode
          *                                    "pixels" in the range of 2-4 are suitable for low res images.
          */
         ColorBlobLocatorProcessor colorLocator = new ColorBlobLocatorProcessor.Builder()
+                //.setTargetColorRange(new ColorRange(ColorSpace.YCrCb, new Scalar(12, 0, 155), new Scalar(255, 255, 255)))         // use a predefined color match
                 .setTargetColorRange(ColorRange.BLUE)         // use a predefined color match
+                .setTargetColorRange(ColorRange.YELLOW)         // use a predefined color match
                 .setContourMode(ColorBlobLocatorProcessor.ContourMode.EXTERNAL_ONLY)    // exclude blobs inside blobs
-                .setRoi(ImageRegion.asUnityCenterCoordinates(-0.5, 0.5, 0.5, -0.5))  // search central 1/4 of camera view
+                .setRoi(ImageRegion.entireFrame())  // search central 1/4 of camera view
                 .setDrawContours(true)                        // Show contours on the Stream Preview
                 .setBlurSize(5)                               // Smooth the transitions between different colors in image
                 .build();
@@ -130,15 +143,22 @@ public class ConceptVisionColorLocator extends LinearOpMode
         VisionPortal portal = new VisionPortal.Builder()
                 .addProcessor(colorLocator)
                 .setCameraResolution(new Size(1920, 1080))
+                .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .build();
 
         telemetry.setMsTransmissionInterval(50);   // Speed up telemetry updates, Just use for debugging.
         telemetry.setDisplayFormat(Telemetry.DisplayFormat.MONOSPACE);
-
+        FtcDashboard.getInstance().startCameraStream(portal, 60);
+        waitForStart();
         // WARNING:  To be able to view the stream preview on the Driver Station, this code runs in INIT mode.
-        while (opModeIsActive() || opModeInInit())
-        {
+        while (opModeIsActive()) {
+            if (gamepad1.a) {
+                armIntakeRight.setPosition(0.15);
+                armIntakeLeft.setPosition(0.15);
+                wristClaw_Intake.setPosition(1);
+                pivotIntake.setPosition(0.32);
+            }
             telemetry.addData("preview on/off", "... Camera Stream\n");
 
             // Read the current list
@@ -164,7 +184,7 @@ public class ConceptVisionColorLocator extends LinearOpMode
              *   A blob's Aspect ratio is the ratio of boxFit long side to short side.
              *   A perfect Square has an aspect ratio of 1.  All others are > 1
              */
-            ColorBlobLocatorProcessor.Util.filterByArea(50, 20000, blobs);  // filter out very small blobs.
+            ColorBlobLocatorProcessor.Util.filterByArea(2000, 20000, blobs);  // filter out very small blobs.
 
             /*
              * The list of Blobs can be sorted using the same Blob attributes as listed above.
@@ -177,15 +197,16 @@ public class ConceptVisionColorLocator extends LinearOpMode
             telemetry.addLine(" Area Density Aspect  Center");
 
             // Display the size (area) and center location for each Blob.
-            for(ColorBlobLocatorProcessor.Blob b : blobs)
-            {
+            for (ColorBlobLocatorProcessor.Blob b : blobs) {
                 RotatedRect boxFit = b.getBoxFit();
                 telemetry.addLine(String.format("%5d  %4.2f   %5.2f  (%3d,%3d)",
-                          b.getContourArea(), b.getDensity(), b.getAspectRatio(), (int) boxFit.center.x, (int) boxFit.center.y));
+                        b.getContourArea(), b.getDensity(), b.getAspectRatio(), (int) boxFit.center.x, (int) boxFit.center.y));
             }
-
+            armIntakeLeft.update();
+            armIntakeRight.update();
+            wristClaw_Intake.update();
+            pivotIntake.update();
             telemetry.update();
-            sleep(50);
         }
     }
 }

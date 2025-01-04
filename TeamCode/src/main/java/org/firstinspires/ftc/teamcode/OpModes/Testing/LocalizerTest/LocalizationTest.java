@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpModes.Testing.LocalizerTest;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -11,7 +13,8 @@ public class LocalizationTest extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry,true);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry, true);
 
         waitForStart();
 
@@ -21,8 +24,8 @@ public class LocalizationTest extends LinearOpMode {
             drive.motors.drive(gamepad1);
 
             drive.update();
-            telemetry.addData("Velo x",drive.localizer.getVelocity().getX());
-            telemetry.addData("Velo y",drive.localizer.getVelocity().getY());
+            telemetry.addData("Velo x", drive.localizer.getVelocity().getX());
+            telemetry.addData("Velo y", drive.localizer.getVelocity().getY());
             telemetry.addData("Power Forward", gamepad1.left_stick_y);
             telemetry.addData("Power Lateral", gamepad1.left_stick_x);
             telemetry.addData("Power Angular", gamepad1.right_stick_x);

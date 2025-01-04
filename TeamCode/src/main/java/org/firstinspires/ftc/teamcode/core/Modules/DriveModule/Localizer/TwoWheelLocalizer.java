@@ -100,7 +100,7 @@ public class TwoWheelLocalizer implements Localizer {
         double dyVelocity = (yVelocity - Δ_theta * headingVel) * cmPerTickForward;
 
         double a, b, c;
-        if (Math.abs(Δ_theta) <= 10e-3) {
+        if (Math.abs(Δ_theta) <= 1e-3) {
             a = 1 - (Δ_theta * Δ_theta) / 6;
             b = -Δ_theta / 2;
             c = Δ_theta / 2;
@@ -127,7 +127,7 @@ public class TwoWheelLocalizer implements Localizer {
                 Math.signum(driveTrainvelocity.getX()) * driveTrainvelocity.getX() * driveTrainvelocity.getX() / (5.08 * xDeceleration),
                 Math.signum(driveTrainvelocity.getY()) * driveTrainvelocity.getY() * driveTrainvelocity.getY() / (5.08 * yDeceleration),
                 0);
-        velocityVector = velocityVector.rotate(-currentPosition.getHeading());
+        //velocityVector = velocityVector.rotate(-currentPosition.getHeading());
         predictedPose = currentPosition.add(velocityVector.toPose());
 
         prev_par_pos = par_current_pos;
@@ -202,7 +202,7 @@ public class TwoWheelLocalizer implements Localizer {
     }
 
     @Override
-    public Vector getVelocityVector() {
+    public Vector getGlideVector() {
         return velocityVector;
     }
 }

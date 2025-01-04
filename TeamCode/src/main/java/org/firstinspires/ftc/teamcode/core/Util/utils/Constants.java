@@ -43,9 +43,9 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 public class Constants {
     public static boolean useDashboard = true;
     //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static final double cmPerTickForward = 1.00 / (8192.00 / (35.0 * Math.PI));
+    public static final double cmPerTickForward = 1.00 / (8192.00 / (3.50 * Math.PI));
     /// FOR REV THROUGH BORE ENCODERS
-    public static final double cmPerTickLateral = 1.00 / (8192.00 / (35.0 * Math.PI));
+    public static final double cmPerTickLateral = 1.00 / (8192.00 / (3.50 * Math.PI));
     /// FOR REV THROUGH BORE ENCODERS
 
     //For classic TwoWheelLocalizer:
@@ -58,26 +58,28 @@ public class Constants {
     public static double parYEncoderLateralDistanceToCenterOfRotation = -14.50;//in mm
 
 
-    public static double xDeceleration = 125.6468960303166, yDeceleration = 69.6536728634694469; //Deceleration for velocity-based stopping
+    public static double xDeceleration = 360.64311677303766, yDeceleration = 310.9077363418124; //Deceleration for velocity-based stopping
 
     //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 
     //GoToPoint Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static double velocityThreshold = 5.0; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
+    public static double velocityThreshold = 9; //velocity treshold for knowing when the robot is stopped quicker than becoming 0 David2K9SRB was here
 
     @Config
     public static class DriveCorrectionCoefficients {
         public static PIDCoefficients
-                xPIDCoeff = new PIDCoefficients(0.13, 0, 0.02),
-                yPIDCoeff = new PIDCoefficients(0.08, 0, 0.013),
-                hPIDCoeff = new PIDCoefficients(0.9, 0, 0.1);
+                tPIDCoeff_GoToPoint = new PIDCoefficients(0.2, 0, 0),
+                xPIDCoeff_Spline = new PIDCoefficients(0.1, 0, 0.005),
+                yPIDCoeff_Spline = new PIDCoefficients(0.1, 0, 0.005),
+                hPIDCoeff = new PIDCoefficients(1.13, 0, 0.1);
 
 
         public static PIDCoefficients
-                xPIDCoeff_finalAdj = new PIDCoefficients(0.095, 0, 0.01),
-                yPIDCoeff_finalAdj = new PIDCoefficients(0.085, 0, 0.01),
-                hPIDCoeff_finalAdj = new PIDCoefficients(1.2, 0, 0.35);
+                tPIDCoeff_finalAdj = new PIDCoefficients(0.2, 0, 0),
+                xPIDCoeff_finalAdj = new PIDCoefficients(0, 0, 0),
+                yPIDCoeff_finalAdj = new PIDCoefficients(0, 0, 0),
+                hPIDCoeff_finalAdj = new PIDCoefficients(1.1, 0, 0.1);
     }
 
     public static final double WAIT_TIME_VARIABLE = 99999999.991;
@@ -85,22 +87,22 @@ public class Constants {
 
 
     //Chassis Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    private static final double xMaxVelocity = 153.03941650390624; //lateral
-    private static final double yMaxVelocity = 243.7246337890625; //forward
+    public static final double xMaxVelocity = 261.4848738942814; //lateral
+    public static final double yMaxVelocity = 295.3784677470312; //forward
     public static Vector frontLeftVector = new Vector(-xMaxVelocity, yMaxVelocity).scaleToMagnitude(1);
 
     //TODO Copy values with voltage correction
     public static double[] minPowersToOvercomeStaticFriction = new double[]{
-            0.3680964613248011,// leftFront
-            0.32564413631117617,// leftBack
-            0.39037267673847714,// rightFront
-            0.3747464238408216// rightBack
+            0.36224584344896005,// leftFront
+            0.31911647181361213,// leftBack
+            0.38111686957202684,// rightFront
+            0.3742317043818398// rightBack
     };
-    public static double minPowerToOvercomeKineticFriction = 0.187;
-    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 13;//In MS
+    public static double minPowerToOvercomeKineticFriction = 0.13;
+    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 25;//In MS
 
 
-    public static double lateralMultiplier = 1;
+    public static double lateralMultiplier = 2.7;
     /// In case u want slower lateral rate of change(can also correct strafing imperfections)
     public static double forwardMultiplier = 1;
     /// In case u want slower heading rate of change at GoToPoint
@@ -120,8 +122,8 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public static double TotalMassOfRobot = 15.2; //(In KG)
-        public static double CentripetalScalingFactor = 0;
+        public static double TotalMassOfRobot = 16.5; //(In KG)
+        public static double CentripetalScalingFactor = 0.000175;
     }
 
     @Config
@@ -151,7 +153,7 @@ public class Constants {
     @Config
     public static class IntakeActivePower {
         public static double intakeCollect = 0.75;
-        public static double intakeScore = -0.4;
+        public static double intakeScore = -0.3;
         public static double intakeWait = 0;
     }
 
@@ -172,6 +174,7 @@ public class Constants {
     public static class WristPositions {
         public static double wristWaitPose = 0.15;
         public static double wristCollectPose = 0.950;
+        public static double wristParkPose = 0.85;
         public static double wristTransferPose = 0.03;
     }
 

@@ -31,7 +31,7 @@ public class AutoSample extends LinearOpMode {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
         robot = new Robot(hardwareMap, new Pose(), telemetry, true, IntakeActive.Color.Red);
 
-        while (!isStarted() && !isStopRequested()) {
+        while (!isStarted() || isStopRequested()) {
             robot.climb.setState(ClimbModule.States.Waiting);
             if (gamepad1.a)
                 robot.climb.setState(ClimbModule.States.ResetLeft);
@@ -46,15 +46,15 @@ public class AutoSample extends LinearOpMode {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        robot.drive.localizer.odo.setPosition(new Pose2D(DistanceUnit.CM, 0, 0, AngleUnit.RADIANS, 0));
+        robot.drive.localizer.odo.setPosition(new Pose2D(DistanceUnit.CM, -20, 0, AngleUnit.RADIANS, 0));
         telemetry.addLine("GATA");
         telemetry.update();
 
-        robot.drive.setMaxPower(0.2);
+        robot.drive.setMaxPower(0.4);
         waitForStart();
         robot.setAction(Robot.Actions.ScoreSpecimenHigh);
 
-        robot.drive.setTargetPose(new Pose(4, 77.5, 0));
+        robot.drive.setTargetPose(new Pose(3, 77.5, 0));
 
 
         timer.reset();

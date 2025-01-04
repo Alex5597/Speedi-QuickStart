@@ -34,7 +34,7 @@ public class Vector {
     }
 
     public static Vector polar(double r, double t) {
-        return new Vector(r * Math.cos(t), r * Math.sin(t));
+        return new Vector(r * Math.cos(t), r * Math.sin(t));//TODO ai schimbat cv aici
     }
 
     public static double dot(Vector a, Vector b) {

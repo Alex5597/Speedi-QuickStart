@@ -1,18 +1,9 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Forward;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Heading;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Lateral;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_Spline;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headignMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
 
 import androidx.annotation.NonNull;
 
@@ -34,8 +25,8 @@ public class SplineFollowing {
     Chassis motors;
     public Spline trajectory;
     Vector finalPower = new Vector(0, 0);
-    public static PIDController xPid = new PIDController(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-    public static PIDController yPid = new PIDController(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+    public static PIDController xPid = new PIDController(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
+    public static PIDController yPid = new PIDController(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
     public static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     Telemetry telemetry;
     double lastT = 0;
@@ -54,8 +45,8 @@ public class SplineFollowing {
         goToPoint = false;
         trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading());
 
-        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+        xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
+        yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         xPid.reset();
@@ -76,8 +67,8 @@ public class SplineFollowing {
         goToPoint = false;
         trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading());
 
-        xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-        yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
+        xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
+        yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         xPid.reset();
@@ -101,7 +92,7 @@ public class SplineFollowing {
         //
 
         //Check for final adjustment
-        if (currentT >= 0.92 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= localizer.getVelocityVector().getMagnitude()) {
+        if (currentT >= 0.85 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= localizer.getGlideVector().getMagnitude()) {
             goToPoint = true;
             telemetry.addLine("GoToPoint activated");
             telemetry.update();
@@ -111,7 +102,7 @@ public class SplineFollowing {
 
         //centripetal Correction
         double curvature = trajectory.curvatureOfThePath(currentT);
-        Vector correctionVector = Vector.polar(Range.clip(Constants.FollowerConstants.CentripetalScalingFactor * Constants.FollowerConstants.TotalMassOfRobot * Math.pow(trajectory.firstDerivative(currentT).scaleToMagnitude(1).getMagnitude(), 2) * curvature, -1, 1), trajectory.firstDerivative(currentT).getRelativeHeading() + Math.PI / 2 * Math.signum(trajectory.pathNormalVect(currentT).getRelativeHeading()));
+        Vector correctionVector = Vector.polar(Range.clip(Constants.FollowerConstants.CentripetalScalingFactor * Constants.FollowerConstants.TotalMassOfRobot * Math.pow(trajectory.firstDerivative(currentT).scaleToMagnitude(1).getMagnitude(), 2) * curvature, -0.7, 0.7), trajectory.firstDerivative(currentT).getRelativeHeading() + Math.PI / 2 * Math.signum(trajectory.pathNormalVect(currentT).getRelativeHeading()));
         telemetry.addData("Centripetal vect", correctionVector.toString());
         telemetry.update();
         //
@@ -119,32 +110,22 @@ public class SplineFollowing {
         //PID Correction
         Pose err = targetPose.subtract(robotPose);
         Vector rotatedErr = err.toVec().rotate(robotPose.getHeading());
-        if (rotatedErr.getMagnitude() > 2 || Math.abs(angleWrapper(err.getHeading())) > Math.toRadians(2)) {
-            motors.setMinPowersToOvercomeFriction();
 
-            xPid.setPID(xPIDCoeff.p, xPIDCoeff.i, xPIDCoeff.d);
-            yPid.setPID(yPIDCoeff.p, yPIDCoeff.i, yPIDCoeff.d);
-            hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+        xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
+        yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
+        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
-        } else {
-            lateralMultiplier = Lateral;
-            forwardMultiplier = Forward;
-            headignMultiplier = Heading;
-
-            motors.resetMinPowersToOvercomeFriction();
-
-            xPid.setPID(xPIDCoeff_finalAdj.p, xPIDCoeff_finalAdj.i, xPIDCoeff_finalAdj.d);
-            yPid.setPID(yPIDCoeff_finalAdj.p, yPIDCoeff_finalAdj.i, yPIDCoeff_finalAdj.d);
-            hPid.setPID(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d);
-        }
         double xPower = xPid.calculate(-rotatedErr.getX(), 0);
         double yPower = yPid.calculate(-rotatedErr.getY(), 0);
         Vector pidVector = new Vector(xPower, yPower);
-
+        if (correctionVector.getMagnitude() > 1)
+            correctionVector = correctionVector.scaleToMagnitude(1);
+        if (Math.abs(pidVector.getX()) + Math.abs(pidVector.getY()) > 1)
+            pidVector = pidVector.scaleToMagnitude(1);
         Vector unscaledCorrectionVector = pidVector.add(correctionVector);
         if (unscaledCorrectionVector.getMagnitude() >= 1) {
-            double norm = Vector.findScaleFactor(correctionVector, pidVector);
-            return correctionVector.add(pidVector.scalarMultiply(norm));
+            double norm = Vector.findScaleFactor(pidVector, correctionVector);
+            return pidVector.add(correctionVector.scalarMultiply(norm));
         }
         //
 
@@ -153,7 +134,7 @@ public class SplineFollowing {
         hPid.setPID(Constants.DriveCorrectionCoefficients.hPIDCoeff.p, Constants.DriveCorrectionCoefficients.hPIDCoeff.i, Constants.DriveCorrectionCoefficients.hPIDCoeff.d);
         double headingPower = -hPid.calculate(-headingDiff, 0);
         unscaledCorrectionVector.setHeading(headingPower);
-        if (unscaledCorrectionVector.getMagnitude_AngularAsWell() >= 1) {
+        if (Math.abs(unscaledCorrectionVector.getX()) + Math.abs(unscaledCorrectionVector.getY()) + Math.abs(unscaledCorrectionVector.getHeading()) > 1) {
             unscaledCorrectionVector.setHeading(headingPower);
             return unscaledCorrectionVector.scaleToMagnitude_AngularAsWell(1);
         }

@@ -81,7 +81,7 @@ public class Robot {
     }
 
     public void update() {
-        if (shouldOpenClaw && timerForOpeningClaw.milliseconds() >= 400) {
+        if (shouldOpenClaw && timerForOpeningClaw.milliseconds() >= 350) {
             intakeSpecimen.open();
             shouldOpenClaw = false;
         }

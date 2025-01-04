@@ -55,6 +55,7 @@ public class LiftController {
     }
 
     public void reset() {
+        disabled = false;
         Lift_Controller.reset();
         Lift_FeedForward = new ElevatorFeedforward(0, gravityGain, 0, 0);
     }

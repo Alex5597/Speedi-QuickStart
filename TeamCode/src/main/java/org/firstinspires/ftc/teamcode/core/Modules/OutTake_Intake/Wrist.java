@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.core.Modules.OutTake_Intake;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WristPositions.wristCollectPose;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WristPositions.wristParkPose;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WristPositions.wristTransferPose;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WristPositions.wristWaitPose;
 
@@ -18,7 +19,8 @@ public class Wrist implements Module {
     public enum States {
         Collect,
         Transfer,
-        Wait
+        Wait,
+        Park
     }
 
     public Wrist(HardwareMap hardwareMap, boolean isAuto) {
@@ -38,6 +40,9 @@ public class Wrist implements Module {
                 break;
             case Wait:
                 wrist.setPosition(wristWaitPose);
+                break;
+            case Park:
+                wrist.setPosition(wristParkPose);
                 break;
         }
     }

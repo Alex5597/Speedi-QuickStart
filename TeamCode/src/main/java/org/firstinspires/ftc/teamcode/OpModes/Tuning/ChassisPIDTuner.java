@@ -32,15 +32,14 @@ public class ChassisPIDTuner extends LinearOpMode {
 
     public static double xTargetPos = 150, yTargetPos = 30, angleTargetPos = 90;//TODO Change how you want
     Pose targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
+    int traj = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new MecanumDrive(hardwareMap, startPose, telemetry, true);
-        slides = new LinearSlides(hardwareMap,true);
+        slides = new LinearSlides(hardwareMap, true);
         state = State.AUTO;
-        Queue<Pose> targetPositions = new LinkedList<>();
-
         telemetry.update();
         waitForStart();
 
@@ -49,12 +48,9 @@ public class ChassisPIDTuner extends LinearOpMode {
                 case DRIVING:
                     if (gamepad1.b) {
                         targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
-                        targetPositions.add(targetPos);
-                        targetPositions.add(new Pose(WAIT_TIME_VARIABLE, 500));
-                        targetPositions.add(startPose);
-                        targetPositions.add(new Pose(WAIT_TIME_VARIABLE, 500));
                         drive.resetPosition(startPose);
                         state = State.AUTO;
+                        traj = 0;
                     }
                     drive.motors.drive(gamepad1);
                     drive.update();
@@ -62,22 +58,26 @@ public class ChassisPIDTuner extends LinearOpMode {
                     drive.PinPointErrorTelemetry(false);
                     break;
                 case AUTO:
-                    targetPositions.add(targetPos);
-                    targetPositions.add(new Pose(WAIT_TIME_VARIABLE, 500));
-                    targetPositions.add(startPose);
-                    targetPositions.add(new Pose(WAIT_TIME_VARIABLE, 500));
-                    drive.setTargetsList(targetPositions);
-
+                    drive.setTargetPose(targetPos);
+                    traj = 0;
                     while (opModeIsActive()) {
+                        switch (traj) {
+                            case 0:
+                                if (drive.isDone()) {
+                                    traj++;
+                                    drive.setTargetPose(startPose);
+                                }
+                                break;
+                        }
+                        if (drive.isDone() && traj == 1)
+                            break;
                         drive.update();
                         if (gamepad1.a) {
                             state = State.DRIVING;
                             drive.stop();
                             break;
                         }
-                        if (drive.isDone())
-                            break;
-                        telemetry.addData("Velocity", drive.localizer.getVelocity().getMagnitude());
+                        telemetry.addData("Velocity", drive.localizer.getVelocity().toString());
                         telemetry.addData("Predicted pose", drive.localizer.getPredictedPoseEstimate());
                         drive.PinPointErrorTelemetry(true);
                         drive.currentPosTelemetry(true);

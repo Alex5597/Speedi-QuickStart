@@ -17,6 +17,7 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headignMu
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.resetMultipliers;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useDashboard;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useFinalAdj;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.velocityThreshold;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Globals.isAuto;
 
@@ -303,7 +304,7 @@ public class MecanumDrive implements Module {
                     Pose currentPose = localizer.getPredictedPoseEstimate();
                     Vector err = targetPose.subtract(currentPose).toVec();
 
-                    if (err.getMagnitude() <= 12 && angleWrapper(err.getHeading()) <= Math.toRadians(12)) {
+                    if (err.getMagnitude() <= 10 && angleWrapper(err.getHeading()) <= Math.toRadians(10) && useFinalAdj) {
                         motors.resetMinPowersToOvercomeFriction();
                         resetMultipliers();
                         tPid.setPID(tPIDCoeff_finalAdj.p, tPIDCoeff_finalAdj.i, tPIDCoeff_finalAdj.d);
@@ -339,8 +340,7 @@ public class MecanumDrive implements Module {
                 Vector followerPower = follower.getMotorPower();
                 if (!followerPower.isNaN()) {
                     if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE)))
-                        motors.setMotorPower(new Vector[]{new Vector(followerPower.getX(), followerPower.getY() + followerPower.getHeading()), new Vector(followerPower.getX(), followerPower.getY() - followerPower.getHeading())});
-                        //motors.setMotorPower(followerPower);
+                        motors.setMotorPower(followerPower);
                     else
                         setTargetPose(targetPose);
                 }

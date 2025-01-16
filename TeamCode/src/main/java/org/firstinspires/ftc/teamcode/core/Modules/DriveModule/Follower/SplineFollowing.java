@@ -142,7 +142,8 @@ public class SplineFollowing {
 
         //Path Power
         Vector pathingPower = trajectory.firstDerivative(currentT).scaleToMagnitude(1).rotate(robotPose.getHeading());
-
+        if (pathingPower.getMagnitude() > 1)
+            pathingPower = pathingPower.scaleToMagnitude(1);
         Vector unscaledFinalPower = unscaledCorrectionVector.add(pathingPower);
         if (unscaledFinalPower.getMagnitude() >= 1) {
             double norm = Vector.findScaleFactor(unscaledCorrectionVector, pathingPower);

@@ -143,6 +143,7 @@ public class MecanumDrive implements Module {
         trajectoryDone = false;
         robotIsStuck = false;
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
     }
 
     /**
@@ -160,6 +161,7 @@ public class MecanumDrive implements Module {
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         trajectoryDone = false;
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
     }
 
     public void setRunMode(RunMode runMode) {
@@ -181,6 +183,7 @@ public class MecanumDrive implements Module {
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
     }
 
     public void setTargetPose(Pose targetPose) {
@@ -193,6 +196,7 @@ public class MecanumDrive implements Module {
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
     }
 
     public void setTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStop) {
@@ -204,6 +208,7 @@ public class MecanumDrive implements Module {
         isOnlyTarget = true;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
         customTolerance = true;
         robotIsStuck = false;
         this.tolerance = tolerance;
@@ -229,6 +234,7 @@ public class MecanumDrive implements Module {
         isOnlyTarget = true;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
         customTolerance = true;
         robotIsStuck = false;
         this.tolerance = tolerance;
@@ -256,6 +262,7 @@ public class MecanumDrive implements Module {
         robotIsStuck = false;
         timerSinceStart.reset();
         this.tolerance = tolerance;
+        timerResetedFailsafe = false;
     }
 
     public void setTargetsList(Queue<Pose> targetPositions) {
@@ -268,6 +275,7 @@ public class MecanumDrive implements Module {
         isOnlyTarget = false;
         robotIsStuck = false;
         timerSinceStart.reset();
+        timerResetedFailsafe = false;
     }
 
     public boolean stopped() {

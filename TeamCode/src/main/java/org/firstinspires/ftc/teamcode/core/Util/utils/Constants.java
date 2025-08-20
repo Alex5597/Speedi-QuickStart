@@ -54,7 +54,6 @@ public class Constants {
 
 
     public static boolean useDashboard = true;
-    public static boolean useFinalAdj = false;
     //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     public static final double cmPerTickForward = 1.00 / (19.89436789f / 10);
     public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);
@@ -68,21 +67,23 @@ public class Constants {
     public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
 
     public static boolean shouldUsePhysicalBraking = true;
-    public static double xDeceleration = 150, yDeceleration = 200; //Deceleration for velocity-based stopping
+    public static double xDeceleration = 1, yDeceleration = 1; //Deceleration for velocity-based stopping
 
     //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 
     //GoToPoint Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static double velocityThreshold = 6.5; //velocity treshold for knowing when the robot is stopped quicker than becoming 0 David2K9SRB was here
+    public static double velocityThreshold = 5; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
 
+    public static boolean useFinalAdj = false;
+    public static boolean holdFinalPoint = true;
     @Config
     public static class DriveCorrectionCoefficients {
         public static PIDCoefficients
-                tPIDCoeff_GoToPoint = new PIDCoefficients(0.09, 0, 0.0),
-                xPIDCoeff_Spline = new PIDCoefficients(0.05, 0, 0.005),
-                yPIDCoeff_Spline = new PIDCoefficients(0.03, 0, 0.005),
-                hPIDCoeff = new PIDCoefficients(1.2, 0, 0.1);
+                tPIDCoeff_GoToPoint = new PIDCoefficients(0, 0, 0.0),
+                xPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
+                yPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
+                hPIDCoeff = new PIDCoefficients(0, 0, 0);
 
 
         public static PIDCoefficients
@@ -93,22 +94,22 @@ public class Constants {
 
 
     //Chassis Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static final double xMaxVelocity = 210.6687520150733; //lateral
-    public static final double yMaxVelocity = 297.0237248819508; //forward
+    public static final double xMaxVelocity = 1; //lateral
+    public static final double yMaxVelocity = 1; //forward
     public static Vector frontLeftVector = new Vector(-xMaxVelocity, yMaxVelocity).scaleToMagnitude(1);
 
     //TODO Copy values with voltage correction
     public static double[] minPowersToOvercomeStaticFriction = new double[]{
-            0.36650354430580123,// leftFront
-            0.3768534098223685,// leftBack
-            0.37089464742306444,// rightFront
-            0.34365580939055806// rightBack
+            0,// leftFront
+            0,// leftBack
+            0,// rightFront
+            0// rightBack
     };
-    public static double minPowerToOvercomeKineticFriction = 0.15;
-    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 87;//In MS
+    public static double minPowerToOvercomeKineticFriction = 0;
+    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 0;//In MS
 
 
-    public static double lateralMultiplier = 2.6;
+    public static double lateralMultiplier = 1;
     /// In case u want slower lateral rate of change(can also correct strafing imperfections)
     public static double forwardMultiplier = 1;
     /// In case u want slower heading rate of change at GoToPoint
@@ -128,11 +129,11 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0.2,0,0);
+        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0,0,0);
         public static double CorrectionMagnitude = 2, HeadingMagnitude = 1.5, PathingMagnitude = 2.5;
         public final static int resolution = 1000;
         public static double TotalMassOfRobot = 17.1; //In KG
-        public static double CentripetalScalingFactor = 0.00001;
+        public static double CentripetalScalingFactor = 0;
         public static double MaxDistFromTrajectory = 5;//In Cm
         public static double MaxForwardAcceleration = 75;  // max accel (speeding up)
         public static double MaxLateralAccelerationWithoutSlippage = 50;  // allowed lateral accel (cornering "g")

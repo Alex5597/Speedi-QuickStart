@@ -10,6 +10,7 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Lateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headingMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.holdFinalPoint;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.resetMultipliers;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
@@ -295,8 +296,12 @@ public class MecanumDrive implements Module {
                 trajectoryDone = true;
                 motors.setMotorPower(0, 0, 0, 0);
                 powerVector = new Vector(0, 0, 0);
-            } else
-                updatePowerVector();
+            } else {
+                if (!trajectoryDone || holdFinalPoint)
+                    updatePowerVector();
+                else
+                    powerVector = new Vector(0,0,0);
+            }
 
             motors.update();
         } else {
@@ -313,10 +318,11 @@ public class MecanumDrive implements Module {
                     currentPose = localizer.getPoseEstimate();
                 else
                     currentPose = localizer.getPredictedPoseEstimate();
-                Vector err = targetPose.subtract(currentPose).toVec();
-                err.setHeading(angleWrapper(err.getHeading()));
+                Pose err = targetPose.subtract(currentPose);
+                Vector rotatedErr = err.toVec().rotate(currentPose.getHeading());
+                rotatedErr.setHeading(angleWrapper(rotatedErr.getHeading()));
 
-                if (err.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
+                if (rotatedErr.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
                     lateralMultiplier = 1;
                     headingMultiplier = 1;
                     forwardMultiplier = 1;
@@ -336,14 +342,14 @@ public class MecanumDrive implements Module {
                     tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
                     hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
                 }
-                double distance = Math.hypot(err.getX(), err.getY());
+                double distance = Math.hypot(rotatedErr.getX(), rotatedErr.getY());
 
-                double calculatedCos = err.getX() / distance;
-                double calculatedSin = err.getY() / distance;
+                double calculatedCos = rotatedErr.getX() / distance;
+                double calculatedSin = rotatedErr.getY() / distance;
                 double translationalPower = tPid.calculate(-distance, 0);
-                powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).rotate(currentPose.getHeading());
+                powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin);
 
-                double headingDiff = angleWrapper(err.getHeading());
+                double headingDiff = angleWrapper(rotatedErr.getHeading());
                 double headingPower = -hPid.calculate(-headingDiff, 0);
                 powerVector.setHeading(headingPower);
                 powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);

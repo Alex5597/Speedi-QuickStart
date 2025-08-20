@@ -12,6 +12,7 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMu
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headingMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.resetMultipliers;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useDashboard;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useFinalAdj;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.velocityThreshold;
@@ -24,6 +25,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowerVechi;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
@@ -34,6 +36,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.DashboardPoseTracker;
 import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
+import org.opencv.core.Mat;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -61,7 +64,7 @@ public class MecanumDrive implements Module {
         PID, MANUAL, Spline
     }
 
-    public SplineFollowerVechi follower;
+    public SplineFollowing follower;
     RunMode runMode = RunMode.MANUAL;
 
     public RunMode getRunMode() {
@@ -76,7 +79,7 @@ public class MecanumDrive implements Module {
 
     public MecanumDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, true);
+        motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
 
         if (useDashboard)
@@ -95,7 +98,7 @@ public class MecanumDrive implements Module {
 
     public MecanumDrive(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, true);
+        motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
 
         if (useDashboard)
@@ -133,7 +136,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withInstantHeadingChange(Spline trajectory) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
-        follower = new SplineFollowerVechi(localizer, trajectory, telemetry);
+        follower = new SplineFollowing(localizer, trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         trajectoryDone = false;
@@ -150,7 +153,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withSlowerHeadingChange(Spline trajectory, double rateOfChange) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
-        follower = new SplineFollowerVechi(localizer, trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
+        follower = new SplineFollowing(localizer, trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
@@ -276,69 +279,25 @@ public class MecanumDrive implements Module {
     public void update() {
         if (isAuto) {
             localizer.update();
-
             if (useDashboard) {
                 poseTracker.update();
                 DrawRobot.drawDebug(this);
             }
-            if (!trajectoryDone) {
-                if (runMode != RunMode.MANUAL) {
-                    if (!customTolerance) {
-                        if ((reachedTarget(3) && reachedHeading(1.5) && !waitingTimer && stopped())
-                                || isStuck()) {
-                            motors.setMotorPowerForced(new Vector(0, 0, 0));
-                            customTolerance = false;
-                            tolerance = new Pose();
-                            resetMultipliers();
-                            motors.setMinPowersToOvercomeFriction();
 
-                            if (!targetPositions.isEmpty()) {
-                                timerSinceStart.reset();
-                                lastTarget = targetPose;
-                                startAngleTraj = localizer.getPoseEstimate().getHeading();
-                                targetPose = targetPositions.poll();
-                            } else {
-                                tPid.reset();
-                                hPid.reset();
-                                motors.setMaxPower(1);
-
-                                timerResetedFailsafe = false;
-                                trajectoryDone = true;
-                            }
-                        } else
-                            updatePowerVector();
-                    } else {
-                        if ((getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && reachedHeading(tolerance.getHeading()) && stopped())
-                                || isStuck()) {
-                            motors.setMotorPowerForced(new Vector(0, 0, 0));
-                            customTolerance = false;
-                            tolerance = new Pose();
-                            resetMultipliers();
-                            motors.setMinPowersToOvercomeFriction();
-
-                            if (!targetPositions.isEmpty()) {
-                                timerSinceStart.reset();
-                                lastTarget = targetPose;
-                                startAngleTraj = localizer.getPoseEstimate().getHeading();
-                                targetPose = targetPositions.poll();
-                            } else {
-                                tPid.reset();
-                                hPid.reset();
-                                motors.setMaxPower(1);
-
-                                timerResetedFailsafe = false;
-                                trajectoryDone = true;
-                            }
-                        } else
-                            updatePowerVector();
-                    }
-                }
-                if (robotIsStuck) {
-                    robotIsStuck = false;
-                    timerSinceStart.reset();
+            if (!customTolerance) {
+                if (getError() <= 4 && Math.toDegrees(getHeadingError()) <= 4 && stopped())
                     trajectoryDone = true;
-                }
-            }
+            } else if (getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && Math.toDegrees(getHeadingError()) <= tolerance.getHeading() && stopped())
+                trajectoryDone = true;
+            if (!trajectoryDone)
+                checkIfRobotIsStuck();
+            if (robotIsStuck) {
+                trajectoryDone = true;
+                motors.setMotorPower(0, 0, 0, 0);
+                powerVector = new Vector(0, 0, 0);
+            } else
+                updatePowerVector();
+
             motors.update();
         } else {
             localizer.updateOnlyImu();
@@ -349,56 +308,49 @@ public class MecanumDrive implements Module {
     public void updatePowerVector() {
         switch (runMode) {
             case PID:
-                if (targetPose.getX() == WAIT_TIME_VARIABLE) {
-                    motors.setMotorPower(new Vector(0, 0, 0));
-                    resetMultipliers();
-                    if (!waitingTimer) {
-                        waitingTimer = true;
-                        timer.reset();
+                Pose currentPose;
+                if (!shouldUsePhysicalBraking)
+                    currentPose = localizer.getPoseEstimate();
+                else
+                    currentPose = localizer.getPredictedPoseEstimate();
+                Vector err = targetPose.subtract(currentPose).toVec();
+                err.setHeading(angleWrapper(err.getHeading()));
+
+                if (err.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
+                    lateralMultiplier = 1;
+                    headingMultiplier = 1;
+                    forwardMultiplier = 1;
+                    motors.resetMinPowersToOvercomeFriction();
+                    if (useFinalAdj) {
+                        tPid.setPIDF(tPIDCoeff_finalAdj.p, tPIDCoeff_finalAdj.i, tPIDCoeff_finalAdj.d, 0);
+                        hPid.setPIDF(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d, 0);
                     }
-                    if (waitingTimer && timer.milliseconds() >= targetPose.getY())
-                        waitingTimer = false;
                 } else {
-                    Pose currentPose = localizer.getPoseEstimate();
-                    Vector err = targetPose.subtract(currentPose).toVec();
-                    err.setHeading(angleWrapper(err.getHeading()));
-
-                    if (err.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
-                        lateralMultiplier = 1;
-                        headingMultiplier = 1;
-                        forwardMultiplier = 1;
-                        if (useFinalAdj) {
-                            err = targetPose.subtract(localizer.getPoseEstimate()).toVec();
-                            motors.resetMinPowersToOvercomeFriction();
-                            tPid.setPIDF(tPIDCoeff_finalAdj.p, tPIDCoeff_finalAdj.i, tPIDCoeff_finalAdj.d, 0);
-                            hPid.setPIDF(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d, 0);
-                        }
-                    } else {
-                        if (getXError() <= 5)
-                            lateralMultiplier = Lateral;
-                        if (getYError() <= 5)
-                            forwardMultiplier = Forward;
-                        if (angleWrapper(err.getHeading()) <= Math.toRadians(5))
-                            headingMultiplier = Heading;
-                        motors.setMinPowersToOvercomeFriction();
-                        tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-                        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
-                    }
-                    double distance = Math.hypot(err.getX(), err.getY());
-
-                    double calculatedCos = err.getX() / distance;
-                    double calculatedSin = err.getY() / distance;
-                    double translationalPower = tPid.calculate(-distance, 0);
-                    powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).rotate(currentPose.getHeading());
-
-                    double headingDiff = angleWrapper(err.getHeading());
-                    double headingPower = -hPid.calculate(-headingDiff, 0);
-                    powerVector.setHeading(headingPower);
-                    powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
-                    powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
-                    //motors.setMotorPower(new Vector[]{new Vector(powerVector.getX(), powerVector.getY() + powerVector.getHeading()), new Vector(powerVector.getX(), powerVector.getY() - powerVector.getHeading())});
-                    motors.setMotorPower(powerVector);
+                    if (getXError() <= 5)
+                        lateralMultiplier = Lateral;
+                    if (getYError() <= 5)
+                        forwardMultiplier = Forward;
+                    if (angleWrapper(err.getHeading()) <= Math.toRadians(5))
+                        headingMultiplier = Heading;
+                    motors.setMinPowersToOvercomeFriction();
+                    tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+                    hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
                 }
+                double distance = Math.hypot(err.getX(), err.getY());
+
+                double calculatedCos = err.getX() / distance;
+                double calculatedSin = err.getY() / distance;
+                double translationalPower = tPid.calculate(-distance, 0);
+                powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).rotate(currentPose.getHeading());
+
+                double headingDiff = angleWrapper(err.getHeading());
+                double headingPower = -hPid.calculate(-headingDiff, 0);
+                powerVector.setHeading(headingPower);
+                powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
+                powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
+                if (powerVector.getMagnitude_AngularAsWell() <= 0.05)
+                    powerVector = powerVector.scalarMultiply(0);
+                motors.setMotorPower(powerVector);
                 break;
             case Spline:
                 Vector followerPower = follower.getMotorPower();
@@ -420,7 +372,7 @@ public class MecanumDrive implements Module {
     }
 
     public boolean reachedTarget(double toleranceInCm) {
-        if (runMode == RunMode.MANUAL || isStuck()) return true;
+        if (runMode == RunMode.MANUAL || robotIsStuck) return true;
         Pose err;
         Pose robotPose = localizer.getPoseEstimate();
         if (targetPose.getX() != WAIT_TIME_VARIABLE)
@@ -454,19 +406,18 @@ public class MecanumDrive implements Module {
         return Math.abs(angleWrapper(targetPose.getHeading() - currPose.getHeading()));
     }
 
-    public boolean isStuck() {
-        if (timerSinceStart.milliseconds() >= 3000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && !timerResetedFailsafe) {
+    private void checkIfRobotIsStuck() {
+        if (timerSinceStart.milliseconds() >= 1000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && !timerResetedFailsafe) {
             timerResetedFailsafe = true;
             failsafeTimer.reset();
         }
-        if (timerResetedFailsafe && failsafeTimer.milliseconds() >= 50) {
+        if (timerResetedFailsafe && failsafeTimer.milliseconds() >= 300) {
             timerResetedFailsafe = false;
+            localizer.update();
             if (localizer.getVelocity().getMagnitude() <= velocityThreshold) {
                 robotIsStuck = true;
-                return true;
             }
         }
-        return false;
     }
 
     public Pose getTarget() {

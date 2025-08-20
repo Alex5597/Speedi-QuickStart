@@ -15,8 +15,6 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 @TeleOp
 public class ChassisPIDTuner extends LinearOpMode {
     MecanumDrive drive;
-    public BetterServo linkageServoRight, linkageServoLeft;
-
     enum State {
         DRIVING,
         AUTO
@@ -74,8 +72,6 @@ public class ChassisPIDTuner extends LinearOpMode {
                         }
                         telemetry.addData("Velocity", drive.localizer.getVelocity().toString());
                         telemetry.addData("Predicted pose", drive.localizer.getPredictedPoseEstimate());
-                        linkageServoLeft.update();
-                        linkageServoRight.update();
                         drive.PinPointErrorTelemetry(true);
                         drive.currentPosTelemetry(true);
                         drive.errorTelemetry(false);

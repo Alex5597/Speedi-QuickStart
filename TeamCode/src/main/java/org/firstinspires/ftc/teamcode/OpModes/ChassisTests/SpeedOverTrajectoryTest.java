@@ -1,0 +1,40 @@
+package org.firstinspires.ftc.teamcode.OpModes.ChassisTests;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
+import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
+
+@TeleOp
+public class SpeedOverTrajectoryTest extends LinearOpMode {
+    SplineFollowing follower;
+    Localizer localizer;
+    Spline spline;
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+        telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
+        spline = new BezierSpline(new CubicBezierCurve(new Vector(0, 0), new Vector(-137, -50), new Vector(-43, 23), new Vector(-169, 23), Math.toRadians(0)));
+        localizer = new PinPointLocalizer(hardwareMap, new Pose(0, 0, 0));
+        follower = new SplineFollowing(localizer, spline, telemetry);
+
+        waitForStart();
+
+        while (opModeIsActive()) {
+            localizer.update();
+            for (double i = 0; i <= 1; i += 0.001)
+                telemetry.addData("Viteza ideala la t= " + i + "este", follower.speedAtT(i));
+            telemetry.addData("Viteza motor", follower.getMotorPower().toString());
+            telemetry.update();
+        }
+    }
+}

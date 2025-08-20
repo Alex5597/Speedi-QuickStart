@@ -49,6 +49,7 @@ public class Constants {
         public static String leftBackMotorName = "LBM";
         public static String rightFrontMotorName = "RFM";
         public static String rightBackMotorName = "RBM";
+        public static String pinpointName = "pinpoint";
     }
 
 
@@ -66,8 +67,8 @@ public class Constants {
     public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm
     public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
 
-
-    public static double xDeceleration = 0, yDeceleration = 0; //Deceleration for velocity-based stopping
+    public static boolean shouldUsePhysicalBraking = true;
+    public static double xDeceleration = 150, yDeceleration = 200; //Deceleration for velocity-based stopping
 
     //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
@@ -79,8 +80,8 @@ public class Constants {
     public static class DriveCorrectionCoefficients {
         public static PIDCoefficients
                 tPIDCoeff_GoToPoint = new PIDCoefficients(0.09, 0, 0.0),
-                xPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
-                yPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
+                xPIDCoeff_Spline = new PIDCoefficients(0.05, 0, 0.005),
+                yPIDCoeff_Spline = new PIDCoefficients(0.03, 0, 0.005),
                 hPIDCoeff = new PIDCoefficients(1.2, 0, 0.1);
 
 
@@ -127,14 +128,14 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0,0,0);
+        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0.2,0,0);
         public static double CorrectionMagnitude = 2, HeadingMagnitude = 1.5, PathingMagnitude = 2.5;
         public final static int resolution = 1000;
-        public static double TotalMassOfRobot = 18; //In KG
-        public static double CentripetalScalingFactor = 0;
+        public static double TotalMassOfRobot = 17.1; //In KG
+        public static double CentripetalScalingFactor = 0.00001;
         public static double MaxDistFromTrajectory = 5;//In Cm
-        public static double A_ACC_MAX   = 0.0;  // max accel (speeding up)
-        public static double A_LAT_MAX   = 0.0;  // allowed lateral accel (cornering "g")
+        public static double MaxForwardAcceleration = 75;  // max accel (speeding up)
+        public static double MaxLateralAccelerationWithoutSlippage = 50;  // allowed lateral accel (cornering "g")
         public static double SPEED_SAFETY = 0.9;  // global margin (0..1)
     }
 

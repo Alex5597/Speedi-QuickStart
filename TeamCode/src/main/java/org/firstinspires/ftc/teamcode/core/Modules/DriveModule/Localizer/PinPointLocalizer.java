@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinpointName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickLateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.parYEncoderLateralDistanceToCenterOfRotation;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.perpXEncoderForwardDistanceToCenterOfRotation;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.xDeceleration;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yDeceleration;
 
@@ -32,12 +34,12 @@ public class PinPointLocalizer implements Localizer {
     private boolean firstLoop = true;
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose) {
-        odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinpointName);
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
 
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL
 
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);//TODO
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);
@@ -53,13 +55,13 @@ public class PinPointLocalizer implements Localizer {
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry) {
         this.telemetry = telemetry;
-        odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinpointName);
 
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
 
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL IN MM
 
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);//TODO;
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO;
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);
@@ -76,6 +78,9 @@ public class PinPointLocalizer implements Localizer {
 
     @Override
     public void update() {
+        if (shouldUsePhysicalBraking)
+            if (xDeceleration == 0 || yDeceleration == 0)
+                throw new RuntimeException("Change xDeceleration and yDeceleration from 0");
         if (firstLoop) {
             velocityAdapter = new VelocityAdapter();
 

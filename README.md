@@ -16,3 +16,8 @@
   </table>
 
 </div>
+
+## Chill Coders (6+1 HEAR ME OUT)
+
+-  A wild [@David2K9SRB](https://www.github.com/David2K9SRB) has apeared
+ - Some [@CodeYS](https://www.github.com/CodeYannSteff) just popped in

@@ -22,6 +22,6 @@ public class VelocityAdapter {
         lastUpdateTime = System.nanoTime();
         Pose twist = pose.subtract(lastPose);
         lastPose = pose;
-        return new Vector(twist.getX() / deltaTimeSeconds, twist.getY() / deltaTimeSeconds);
+        return new Vector(twist.getX() / deltaTimeSeconds, twist.getY() / deltaTimeSeconds, twist.getHeading() / deltaTimeSeconds);
     }
 }

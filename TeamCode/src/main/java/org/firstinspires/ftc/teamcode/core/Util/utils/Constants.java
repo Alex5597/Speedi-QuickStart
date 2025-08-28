@@ -38,20 +38,17 @@ package org.firstinspires.ftc.teamcode.core.Util.utils;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 
+import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @Config
 public class Constants {
 
-    @Config
-    public static class DeviceNames {
-        public static String leftFrontMotorName = "LFM";
-        public static String leftBackMotorName = "LBM";
-        public static String rightFrontMotorName = "RFM";
-        public static String rightBackMotorName = "RBM";
-        public static String pinpointName = "pinpoint";
+    public static class Globals{
+        public static boolean isSampleAuto = false;
+        public static Pose startPoseTeleOp = new Pose();
+        public static double voltage = 12.0;
     }
-
 
     public static boolean useDashboard = true;
     //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
@@ -67,49 +64,50 @@ public class Constants {
     public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
 
     public static boolean shouldUsePhysicalBraking = true;
-    public static double xDeceleration = 1, yDeceleration = 1; //Deceleration for velocity-based stopping
+    public static double xDeceleration = 260, yDeceleration = 360; //Deceleration for velocity-based stopping
 
     //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 
     //GoToPoint Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static double velocityThreshold = 5; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
+    public static double velocityThreshold = 11; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
 
-    public static boolean useFinalAdj = false;
+    public static boolean useFinalAdj = true;
     public static boolean holdFinalPoint = true;
+
     @Config
     public static class DriveCorrectionCoefficients {
         public static PIDCoefficients
-                tPIDCoeff_GoToPoint = new PIDCoefficients(0, 0, 0.0),
-                xPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
-                yPIDCoeff_Spline = new PIDCoefficients(0, 0, 0),
-                hPIDCoeff = new PIDCoefficients(0, 0, 0);
+                tPIDCoeff_GoToPoint = new PIDCoefficients(0.2, 0, 0.0),
+                xPIDCoeff_Spline = new PIDCoefficients(0.04, 0, 0),
+                yPIDCoeff_Spline = new PIDCoefficients(0.05, 0, 0),
+                hPIDCoeff = new PIDCoefficients(1, 0, 0.12);
 
 
         public static PIDCoefficients
-                tPIDCoeff_finalAdj = new PIDCoefficients(0, 0, 0),
-                hPIDCoeff_finalAdj = new PIDCoefficients(0, 0, 0);
+                tPIDCoeff_finalAdj = new PIDCoefficients(0.15, 0, 0.012),
+                hPIDCoeff_finalAdj = new PIDCoefficients(1.5, 0, 0.14);
     }
     //GoToPoint Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 
     //Chassis Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static final double xMaxVelocity = 1; //lateral
-    public static final double yMaxVelocity = 1; //forward
+    public static final double xMaxVelocity = 193; //lateral
+    public static final double yMaxVelocity = 214; //forward
     public static Vector frontLeftVector = new Vector(-xMaxVelocity, yMaxVelocity).scaleToMagnitude(1);
 
     //TODO Copy values with voltage correction
     public static double[] minPowersToOvercomeStaticFriction = new double[]{
-            0,// leftFront
-            0,// leftBack
-            0,// rightFront
-            0// rightBack
+            0.3759769241873331,// leftFront
+            0.42030861482515924,// leftBack
+            0.4856730473855483,// rightFront
+            0.44800961628546654// rightBack
     };
-    public static double minPowerToOvercomeKineticFriction = 0;
-    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 0;//In MS
+    public static double minPowerToOvercomeKineticFriction = 0.173;
+    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 77;//In MS
 
 
-    public static double lateralMultiplier = 1;
+    public static double lateralMultiplier = 2.2;
     /// In case u want slower lateral rate of change(can also correct strafing imperfections)
     public static double forwardMultiplier = 1;
     /// In case u want slower heading rate of change at GoToPoint
@@ -129,11 +127,11 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0,0,0);
+        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0, 0, 0);
         public static double CorrectionMagnitude = 2, HeadingMagnitude = 1.5, PathingMagnitude = 2.5;
         public final static int resolution = 1000;
         public static double TotalMassOfRobot = 17.1; //In KG
-        public static double CentripetalScalingFactor = 0;
+        public static double CentripetalScalingFactor = 0.0005;
         public static double MaxDistFromTrajectory = 5;//In Cm
         public static double MaxForwardAcceleration = 75;  // max accel (speeding up)
         public static double MaxLateralAccelerationWithoutSlippage = 50;  // allowed lateral accel (cornering "g")
@@ -142,4 +140,12 @@ public class Constants {
 
 
     public static final double WAIT_TIME_VARIABLE = 99999999.991; //IGNORA
+    @Config
+    public static class DeviceNames {
+        public static String leftFrontMotorName = "LFM";
+        public static String leftBackMotorName = "LBM";
+        public static String rightFrontMotorName = "RFM";
+        public static String rightBackMotorName = "RBM";
+        public static String pinPointName = "odo";
+    }
 }

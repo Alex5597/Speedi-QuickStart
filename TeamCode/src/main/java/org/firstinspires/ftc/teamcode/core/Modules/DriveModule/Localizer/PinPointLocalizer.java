@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinpointName;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinPointName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickLateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.parYEncoderLateralDistanceToCenterOfRotation;
@@ -34,7 +34,7 @@ public class PinPointLocalizer implements Localizer {
     private boolean firstLoop = true;
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose) {
-        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinpointName);
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
 
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL
@@ -55,7 +55,7 @@ public class PinPointLocalizer implements Localizer {
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry) {
         this.telemetry = telemetry;
-        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinpointName);
+        odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
 
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
 
@@ -95,7 +95,7 @@ public class PinPointLocalizer implements Localizer {
         Pose2D pose = odo.getPosition();
         currentPosition = new Pose(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), angle).rotateFieldCoordinate(-Math.PI / 2);
         Vector velocity = velocityAdapter.getVelocity(currentPosition);
-        velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()));
+        velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()), velocity.getHeading());
         //Vector driveTrainvelocity = velocityVectorRaw.rotate(0); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
         lastVelocityVector = velocityVectorRaw;
         glideVector = new Vector(

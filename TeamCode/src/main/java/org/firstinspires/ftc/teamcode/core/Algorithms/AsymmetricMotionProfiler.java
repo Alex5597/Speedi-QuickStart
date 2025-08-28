@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.core.Util.Algorithm;
+package org.firstinspires.ftc.teamcode.CodeBTC.Core.Algorithms;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -11,7 +11,7 @@ public class AsymmetricMotionProfiler {
     public double initialPosition, finalPosition;
     ElapsedTime timer = new ElapsedTime();
 
-    private double position, velocity, signedVelocity;
+    //private double position, velocity, signedVelocity;
 
     public AsymmetricMotionProfiler(double maxVelocity, double acceleration, double deceleration) {
         this.maxVelocity = maxVelocity;
@@ -29,12 +29,11 @@ public class AsymmetricMotionProfiler {
 
     public void setMotion(double initialPosition, double finalPosition){
         this.initialPosition = initialPosition;
+        this.finalPosition = finalPosition;
         double distance = Math.abs(finalPosition - initialPosition);
         if(distance == 0){
             return;
         }
-        this.initialPosition = initialPosition;
-        this.finalPosition = finalPosition;
         maxUsedVelocity = Math.min(maxVelocity, Math.sqrt((2 * distance * acceleration * deceleration) / (acceleration + deceleration)));
         T0 = maxUsedVelocity / acceleration;
         T2 = maxUsedVelocity / deceleration;

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.OpModes.ChassisTests;
+package org.firstinspires.ftc.teamcode.OpModes.Testing.ChassisTests;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -25,15 +25,15 @@ public class SpeedOverTrajectoryTest extends LinearOpMode {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
         spline = new BezierSpline(new CubicBezierCurve(new Vector(0, 0), new Vector(-137, -50), new Vector(-43, 23), new Vector(-169, 23), Math.toRadians(0)));
         localizer = new PinPointLocalizer(hardwareMap, new Pose(0, 0, 0));
-        follower = new SplineFollowing(new Pose(), spline, telemetry);
+        follower = new SplineFollowing(localizer.getPoseEstimate(), spline, telemetry);
 
         waitForStart();
 
         while (opModeIsActive()) {
             localizer.update();
             //for (double i = 0; i <= 1; i += 0.001)
-            // telemetry.addData("Viteza ideala la t= " + i + "este", follower.speedAtT(i));
-            telemetry.addData("Viteza motor", follower.getMotorPower(localizer.getPoseEstimate(), localizer.getGlideVector()).toString());
+               // telemetry.addData("Viteza ideala la t= " + i + "este", follower.speedAtT(i));
+            telemetry.addData("Viteza motor", follower.getMotorPower(localizer.getPoseEstimate(),localizer.getGlideVector()).toString());
             telemetry.update();
         }
     }

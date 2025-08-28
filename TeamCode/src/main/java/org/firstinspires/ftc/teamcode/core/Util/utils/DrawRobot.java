@@ -56,7 +56,7 @@ public class DrawRobot {
         DrawRobot.drawRobotOnCanvas(packet.fieldOverlay(), pose);
     }
 
-    private static void drawPath(Spline path, String color) {
+    public static void drawPath(Spline path, String color) {
         if (packet == null) packet = new TelemetryPacket();
 
         packet.fieldOverlay().setStroke(color);

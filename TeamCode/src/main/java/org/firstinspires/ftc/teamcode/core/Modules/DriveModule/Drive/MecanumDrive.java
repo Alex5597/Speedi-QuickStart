@@ -137,7 +137,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withInstantHeadingChange(Spline trajectory) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
-        follower = new SplineFollowing(localizer, trajectory, telemetry);
+        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading();
         trajectoryDone = false;
@@ -155,7 +155,19 @@ public class MecanumDrive implements Module {
     public void setSpline_withSlowerHeadingChange(Spline trajectory, double rateOfChange) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
-        follower = new SplineFollowing(localizer, trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
+        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
+        targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
+        robotIsStuck = false;
+        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        trajectoryDone = false;
+        timerSinceStart.reset();
+        timerResetedFailsafe = false;
+    }
+
+    public void setSpline_withTangentialHeadingChange(Spline trajectory) {
+        this.runMode = RunMode.Spline;
+        this.curve = trajectory;
+        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading();
@@ -292,23 +304,30 @@ public class MecanumDrive implements Module {
                 poseTracker.update();
                 DrawRobot.drawDebug(this);
             }
-
-            if (!customTolerance) {
-                if (getError() <= 4 && Math.toDegrees(getHeadingError()) <= 4 && stopped())
+            if (runMode != RunMode.MANUAL) {
+                if (!customTolerance) {
+                    if (reachedTarget(3) && reachedHeading(2) && stopped()) {
+                        trajectoryDone = true;
+                        robotIsStuck = false;
+                    }
+                } else if (getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && reachedHeading(tolerance.getHeading()) && stopped()) {
                     trajectoryDone = true;
-            } else if (getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && Math.toDegrees(getHeadingError()) <= tolerance.getHeading() && stopped())
-                trajectoryDone = true;
-            if (!trajectoryDone)
-                checkIfRobotIsStuck();
-            if (robotIsStuck) {
-                trajectoryDone = true;
-                motors.setMotorPower(0, 0, 0, 0);
-                powerVector = new Vector(0, 0, 0);
-            } else {
-                if (!trajectoryDone || holdFinalPoint)
-                    updatePowerVector();
-                else
-                    powerVector = new Vector(0,0,0);
+                    robotIsStuck = false;
+                }
+
+                if (!trajectoryDone)
+                    checkIfRobotIsStuck();
+
+                if (robotIsStuck) {
+                    trajectoryDone = true;
+                    motors.setMotorPower(0, 0, 0, 0);
+                    powerVector = new Vector(0, 0, 0);
+                } else {
+                    if (!trajectoryDone || holdFinalPoint)
+                        updatePowerVector();
+                    else
+                        motors.setMotorPower(0, 0, 0, 0);
+                }
             }
 
             motors.update();
@@ -331,6 +350,7 @@ public class MecanumDrive implements Module {
                 rotatedErr.setHeading(angleWrapper(rotatedErr.getHeading()));
 
                 if (rotatedErr.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
+                    rotatedErr = targetPose.subtract(localizer.getPoseEstimate()).toVec().rotate(currentPose.getHeading());
                     lateralMultiplier = 1;
                     headingMultiplier = 1;
                     forwardMultiplier = 1;
@@ -362,12 +382,11 @@ public class MecanumDrive implements Module {
                 powerVector.setHeading(headingPower);
                 powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
                 powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
-                if (powerVector.getMagnitude_AngularAsWell() <= 0.05)
-                    powerVector = powerVector.scalarMultiply(0);
+
                 motors.setMotorPower(powerVector);
                 break;
             case Spline:
-                Vector followerPower = follower.getMotorPower();
+                Vector followerPower = follower.getMotorPower(localizer.getPoseEstimate(), localizer.getGlideVector());
                 if (!followerPower.isNaN()) {
                     if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE)))
                         motors.setMotorPower(followerPower);
@@ -421,14 +440,14 @@ public class MecanumDrive implements Module {
     }
 
     private void checkIfRobotIsStuck() {
-        if (timerSinceStart.milliseconds() >= 1000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && !timerResetedFailsafe) {
+        if (timerSinceStart.milliseconds() >= 1000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && localizer.getVelocity().getHeading() <= 2 && !timerResetedFailsafe) {
             timerResetedFailsafe = true;
             failsafeTimer.reset();
         }
         if (timerResetedFailsafe && failsafeTimer.milliseconds() >= 300) {
             timerResetedFailsafe = false;
             localizer.update();
-            if (localizer.getVelocity().getMagnitude() <= velocityThreshold) {
+            if (localizer.getVelocity().getHeading() <= 2 && localizer.getVelocity().getMagnitude() <= velocityThreshold) {
                 robotIsStuck = true;
             }
         }
@@ -460,6 +479,7 @@ public class MecanumDrive implements Module {
         telemetry.addData("Target", (reachedTarget(3)));
         telemetry.addData("Target heading", (reachedHeading(2)));
         telemetry.addData("Condition", Math.abs(Math.toDegrees(angleWrapper(error.getHeading()))));
+        telemetry.addData("Robot is Stuck", robotIsStuck);
         if (!updated) telemetry.update();
     }
 
@@ -553,7 +573,6 @@ public class MecanumDrive implements Module {
         if (angle < -Math.PI) angle += 2.0 * Math.PI;
         return angle;
     }
-
     public Localizer getLocalizerInstance() {
         return localizer;
     }

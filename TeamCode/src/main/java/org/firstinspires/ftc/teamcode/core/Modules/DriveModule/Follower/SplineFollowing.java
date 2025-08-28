@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_Spline;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
 
 import androidx.annotation.NonNull;
@@ -21,7 +22,6 @@ import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
 public class SplineFollowing {
-    public Localizer localizer;
     Chassis motors;
     public Spline trajectory;
     Vector finalPower = new Vector(0, 0);
@@ -33,16 +33,17 @@ public class SplineFollowing {
     Vector finalPoint;
     boolean goToPoint, instantHeading;
     double tLerp = 0;
+    boolean tangential = false;
 
-    public SplineFollowing(Localizer localizer, @NonNull Spline trajectory, Telemetry telemetry) {
+    public SplineFollowing(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
         this.trajectory = trajectory;
-        this.localizer = localizer;
         this.telemetry = telemetry;
         this.instantHeading = true;
 
+        telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading());
+        trajectory.setFirstHeading(startPose.getHeading());
 
         xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -53,17 +54,17 @@ public class SplineFollowing {
         hPid.reset();
     }
 
-    public SplineFollowing(Localizer localizer, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
+    public SplineFollowing(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
         this.trajectory = trajectory;
-        this.localizer = localizer;
         this.telemetry = telemetry;
 
         this.instantHeading = false;
         tLerp = rateOfChange;
 
+        telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading());
+        trajectory.setFirstHeading(startPose.getHeading());
 
         xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -74,42 +75,68 @@ public class SplineFollowing {
         hPid.reset();
     }
 
-    public Vector getMotorPower() {
+    public SplineFollowing(@NonNull Spline trajectory, Telemetry telemetry, boolean tangential) {
+        this.trajectory = trajectory;
+        this.telemetry = telemetry;
+
+        this.instantHeading = false;
+        this.tangential = tangential;
+
+        finalPoint = trajectory.calculate(1);
+        goToPoint = false;
+
+        xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
+        yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
+        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+
+        xPid.reset();
+        yPid.reset();
+        hPid.reset();
+    }
+
+    public Vector getMotorPower(Pose robotPose, Vector glideVector) {
         if (goToPoint)
             return new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE);
 
-        //Finding closest point
-        Pose robotPose = localizer.getPoseEstimate();
-        double currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT);
-        // double currentT = trajectory.findClosestPoint(robotPose.toVec());//TODO try again
+        // Finding closest point
+        double currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT) + 1.0 / resolution;
         lastT = currentT;
         Vector currTargetPoint = trajectory.calculate(currentT);
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT));
-        if (!instantHeading)
+        if (tangential)
+            targetPose.setHeading(trajectory.heading(currentT));
+        else if (!instantHeading)
             targetPose.setHeading(hlerp(robotPose.getHeading(), trajectory.heading(currentT), tLerp));
-        //
 
-        //Check for final adjustment
-        if (currentT >= 0.95 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= localizer.getGlideVector().getMagnitude()) {
+        // Check for final adjustment
+        if (currentT >= 0.95 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= glideVector.getMagnitude()) {
             goToPoint = true;
             telemetry.addLine("GoToPoint activated");
             telemetry.update();
             return new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE);
         }
-        //
 
-        //centripetal Correction
+        // ---------- Centripetal Correction (robot frame) ----------
         double curvature = trajectory.curvatureOfThePath(currentT);
-        Vector correctionVector = Vector.polar(Range.clip(Constants.FollowerConstants.CentripetalScalingFactor * Constants.FollowerConstants.TotalMassOfRobot * Math.pow(trajectory.firstDerivative(currentT).scaleToMagnitude(1).getMagnitude(), 2) * curvature, -0.7, 0.7), trajectory.firstDerivative(currentT).getRelativeHeading() + Math.PI / 2 * Math.signum(trajectory.pathNormalVect(currentT).getRelativeHeading()));
-        if (correctionVector.getMagnitude() >= 1) {
-            correctionVector = correctionVector.scaleToMagnitude(1);
-            return correctionVector;
-        }
-        telemetry.addData("Centripetal vect", correctionVector.toString());
-        telemetry.update();
-        //
+        double tanField = trajectory.firstDerivative(currentT).getRelativeHeading();
+        double tanRobot = angleWrapper(tanField - robotPose.getHeading());
+        double normalRobot = angleWrapper(tanRobot + (curvature >= 0 ? Math.PI / 2.0 : -Math.PI / 2.0));
 
-        //PID Correction
+        double corrMag = Range.clip(
+                Constants.FollowerConstants.CentripetalScalingFactor
+                        * Constants.FollowerConstants.TotalMassOfRobot
+                        * Math.abs(curvature),
+                -1, 1
+        );
+
+        Vector correctionVector = Vector.polar(corrMag, normalRobot);
+        if (correctionVector.getMagnitude() >= 1) {
+            return correctionVector.scaleToMagnitude(1);
+        }
+        telemetry.addData("Centripetal vect (robot)", correctionVector.toString());
+        telemetry.update();
+
+        // ---------- PID Correction (robot frame) ----------
         Pose err = targetPose.subtract(robotPose);
         Vector rotatedErr = err.toVec().rotate(robotPose.getHeading());
 
@@ -125,28 +152,24 @@ public class SplineFollowing {
             double norm = Vector.findScaleFactor(pidVector, correctionVector);
             return pidVector.add(correctionVector.scalarMultiply(norm));
         }
-        //
 
-        //Heading Correction
+        // ---------- Heading Correction ----------
         double headingDiff = angleWrapper(err.getHeading());
         hPid.setPID(Constants.DriveCorrectionCoefficients.hPIDCoeff.p, Constants.DriveCorrectionCoefficients.hPIDCoeff.i, Constants.DriveCorrectionCoefficients.hPIDCoeff.d);
         double headingPower = -hPid.calculate(-headingDiff, 0);
         unscaledCorrectionVector.setHeading(headingPower);
         if (Math.abs(unscaledCorrectionVector.getX()) + Math.abs(unscaledCorrectionVector.getY()) + Math.abs(unscaledCorrectionVector.getHeading()) > 1) {
-            unscaledCorrectionVector.setHeading(headingPower);
             return unscaledCorrectionVector.scaleToMagnitude_AngularAsWell(1);
         }
-        //
 
-        //Path Power
-        Vector pathingPower = Vector.polar(1, trajectory.firstDerivative(currentT).getRelativeHeading()).rotate(robotPose.getHeading());
+        // ---------- Path Feedforward (robot frame) ----------
+        Vector pathingPower = Vector.polar(1, tanRobot);
         Vector unscaledFinalPower = unscaledCorrectionVector.add(pathingPower);
         if (unscaledFinalPower.getMagnitude() >= 1) {
             double norm = Vector.findScaleFactor(unscaledCorrectionVector, pathingPower);
             return unscaledCorrectionVector.add(pathingPower.scalarMultiply(norm));
         }
         finalPower = unscaledFinalPower;
-        //
 
         return finalPower;
     }

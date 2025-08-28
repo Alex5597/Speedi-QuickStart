@@ -100,7 +100,7 @@ public class CubicBezierCurve implements Spline {
 
     public double heading(double t) {
         if (targetAngle == Double.POSITIVE_INFINITY)
-            return firstDerivative(t).getRelativeHeading() - firstAngle;
+            return firstDerivative(t).getRelativeHeading();
         else
             return targetAngle;
     }
@@ -201,28 +201,34 @@ public class CubicBezierCurve implements Spline {
 
     @Override
     public double getLengthAt(double t) {
-        int index = (int) (t * resolution);
-        index = Math.min(resolution - 1, Math.max(0, index));
-
-        // Calculate the fractional part of t * resolution for accurate interpolation
-        double fractionalPart = t * resolution - index;
-
-        // Interpolate between the length at index and index + 1
-        double nextIndexLength = lengthArray.get(Math.min(resolution - 1, index + 1));
-        double currentIndexLength = lengthArray.get(index);
-
-        return currentIndexLength + (nextIndexLength - currentIndexLength) * fractionalPart;
+        t = Math.max(0, Math.min(1, t));
+        int n = resolution;
+        double idx = t * n;
+        int i = (int) Math.floor(idx);
+        if (i >= n) return lengthArray.get(n); // t == 1
+        double frac = idx - i;
+        double a = lengthArray.get(i);
+        double b = lengthArray.get(i + 1);
+        return a + (b - a) * frac;
     }
 
     private void computeLength() {
+        lengthArray.clear();
+        length = 0;
         double dt = 1.0 / (double) resolution;
-        for (double d = 0; d <= 1; d += dt) {
-            Vector currentPoint = calculate(d);
-            dashboardDrawingPoints[1][(int) (d * resolution)] = -currentPoint.getX() / 2.54;
-            dashboardDrawingPoints[0][(int) (d * resolution)] = currentPoint.getY() / 2.54;
+
+        for (int i = 0; i <= resolution; i++) {
+            double t = i * dt;
+
+            Vector currentPoint = calculate(t);
+            dashboardDrawingPoints[1][i] = -currentPoint.getX() / 2.54;
+            dashboardDrawingPoints[0][i] =  currentPoint.getY() / 2.54;
 
             lengthArray.add(length);
-            length += calculate(d).getMagnitude() * dt;
+            if (i < resolution) {
+                double speed = firstDerivative(t).getMagnitude();
+                length += speed * dt;
+            }
         }
     }
 

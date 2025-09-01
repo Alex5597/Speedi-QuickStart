@@ -47,7 +47,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.toPose2D());
+        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
         currentPosition = startPose;
         lastPosition = startPose;
         predictedPose = startPose;
@@ -69,7 +69,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.toPose2D());
+        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
 
         currentPosition = startPose;
         lastPosition = startPose;

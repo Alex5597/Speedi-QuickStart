@@ -25,7 +25,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowerVechi;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
@@ -37,7 +36,6 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.DashboardPoseTracker;
 import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
-import org.opencv.core.Mat;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -137,6 +135,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withInstantHeadingChange(Spline trajectory) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
+        localizer.update();
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading();
@@ -155,6 +154,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withSlowerHeadingChange(Spline trajectory, double rateOfChange) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
+        localizer.update();
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
@@ -167,6 +167,7 @@ public class MecanumDrive implements Module {
     public void setSpline_withTangentialHeadingChange(Spline trajectory) {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
+        localizer.update();
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
@@ -277,6 +278,20 @@ public class MecanumDrive implements Module {
         timerResetedFailsafe = false;
     }
 
+    public void updatePose(Pose targetPose) {
+        this.shouldWaitToStop = true;
+        this.runMode = RunMode.PID;
+        this.targetPose = targetPose;
+        targetPositions.clear();
+        trajectoryDone = false;
+        isOnlyTarget = true;
+        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        customTolerance = false;
+        robotIsStuck = false;
+        timerSinceStart.reset();
+        timerResetedFailsafe = false;
+    }
+
     public void setTargetsList(Queue<Pose> targetPositions) {
         this.runMode = RunMode.PID;
         this.targetPositions = targetPositions;
@@ -306,7 +321,7 @@ public class MecanumDrive implements Module {
             }
             if (runMode != RunMode.MANUAL) {
                 if (!customTolerance) {
-                    if (reachedTarget(3) && reachedHeading(2) && stopped()) {
+                    if (reachedTarget(4) && reachedHeading(3) && stopped()) {
                         trajectoryDone = true;
                         robotIsStuck = false;
                     }
@@ -338,13 +353,14 @@ public class MecanumDrive implements Module {
     }
 
     public void updatePowerVector() {
+        Pose currentPose;
+        if (!shouldUsePhysicalBraking)
+            currentPose = localizer.getPoseEstimate();
+        else
+            currentPose = localizer.getPredictedPoseEstimate();
+
         switch (runMode) {
             case PID:
-                Pose currentPose;
-                if (!shouldUsePhysicalBraking)
-                    currentPose = localizer.getPoseEstimate();
-                else
-                    currentPose = localizer.getPredictedPoseEstimate();
                 Pose err = targetPose.subtract(currentPose);
                 Vector rotatedErr = err.toVec().rotate(currentPose.getHeading());
                 rotatedErr.setHeading(angleWrapper(rotatedErr.getHeading()));
@@ -386,12 +402,13 @@ public class MecanumDrive implements Module {
                 motors.setMotorPower(powerVector);
                 break;
             case Spline:
-                Vector followerPower = follower.getMotorPower(localizer.getPoseEstimate(), localizer.getGlideVector());
+                Vector followerPower = follower.getMotorPower(currentPose, localizer.getVelocity(), localizer.getGlideVector());
                 if (!followerPower.isNaN()) {
-                    if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE)))
-                        motors.setMotorPower(followerPower);
-                    else
-                        setTargetPose(targetPose);
+                    if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE))) {
+                        powerVector = followerPower.rotate(currentPose.getHeading());
+                        motors.setMotorPower(powerVector);
+                    } else
+                        updatePose(targetPose);
                 }
                 break;
             case MANUAL:
@@ -573,6 +590,7 @@ public class MecanumDrive implements Module {
         if (angle < -Math.PI) angle += 2.0 * Math.PI;
         return angle;
     }
+
     public Localizer getLocalizerInstance() {
         return localizer;
     }

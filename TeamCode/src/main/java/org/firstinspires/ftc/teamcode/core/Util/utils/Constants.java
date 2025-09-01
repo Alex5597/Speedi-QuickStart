@@ -43,13 +43,6 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @Config
 public class Constants {
-
-    public static class Globals{
-        public static boolean isSampleAuto = false;
-        public static Pose startPoseTeleOp = new Pose();
-        public static double voltage = 12.0;
-    }
-
     public static boolean useDashboard = true;
     //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     public static final double cmPerTickForward = 1.00 / (19.89436789f / 10);
@@ -79,6 +72,7 @@ public class Constants {
     public static class DriveCorrectionCoefficients {
         public static PIDCoefficients
                 tPIDCoeff_GoToPoint = new PIDCoefficients(0.2, 0, 0.0),
+                tPIDCoeff_Spline = new PIDCoefficients(0.08, 0, 0),
                 xPIDCoeff_Spline = new PIDCoefficients(0.04, 0, 0),
                 yPIDCoeff_Spline = new PIDCoefficients(0.05, 0, 0),
                 hPIDCoeff = new PIDCoefficients(1, 0, 0.12);
@@ -127,15 +121,10 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public static PIDCoefficients speedPIDCoeff_Spline = new PIDCoefficients(0, 0, 0);
-        public static double CorrectionMagnitude = 2, HeadingMagnitude = 1.5, PathingMagnitude = 2.5;
         public final static int resolution = 1000;
         public static double TotalMassOfRobot = 17.1; //In KG
-        public static double CentripetalScalingFactor = 0.0005;
-        public static double MaxDistFromTrajectory = 5;//In Cm
-        public static double MaxForwardAcceleration = 75;  // max accel (speeding up)
-        public static double MaxLateralAccelerationWithoutSlippage = 50;  // allowed lateral accel (cornering "g")
-        public static double SPEED_SAFETY = 0.9;  // global margin (0..1)
+        public static double CentripetalScalingFactor = 0.000025;
+        public static boolean shouldBrake = true;
     }
 
 

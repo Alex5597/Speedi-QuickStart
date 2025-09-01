@@ -32,8 +32,8 @@ public class SpeedOverTrajectoryTest extends LinearOpMode {
         while (opModeIsActive()) {
             localizer.update();
             //for (double i = 0; i <= 1; i += 0.001)
-               // telemetry.addData("Viteza ideala la t= " + i + "este", follower.speedAtT(i));
-            telemetry.addData("Viteza motor", follower.getMotorPower(localizer.getPoseEstimate(),localizer.getGlideVector()).toString());
+            // telemetry.addData("Viteza ideala la t= " + i + "este", follower.speedAtT(i));
+            telemetry.addData("Viteza motor", follower.getMotorPower(localizer.getPoseEstimate(), localizer.getVelocity(), localizer.getGlideVector()).toString());
             telemetry.update();
         }
     }

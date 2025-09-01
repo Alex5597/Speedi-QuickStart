@@ -22,15 +22,17 @@ public class TestSpline extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        BezierSpline spline1 = new BezierSpline(new CubicBezierCurve(new Vector(-46, 15), new Vector(32, 15), new Vector(32, 15), new Vector(101, 15), Math.toRadians(-90)));
+        BezierSpline spline1 = new BezierSpline(new CubicBezierCurve(new Vector(-46, 15), new Vector(32, 15), new Vector(32, 15), new Vector(101, 15), Math.toRadians(90)));
         BezierSpline spline2 = new BezierSpline(new CubicBezierCurve(new Vector(30, 150), new Vector(-30, 132.7), new Vector(-46, -120), new Vector(-46, 15), Math.toRadians(-35)));
 
-        for (double i = 0; i <= 1; i += 10.0 / resolution)
-            telemetry.addData("POSE AT t=" + i + " is", new Pose(spline1.calculate(i), spline1.heading(i)).toString());
+//        for (double i = 0; i <= 1; i += 10.0 / resolution) {
+//            telemetry.addData("First derivative AT t=" + i + " is", new Pose(spline1.calculate(i), spline1.heading(i)).toString());
+//            telemetry.addData("POSE AT t=" + i + " is", new Pose(spline1.firstDerivative(i), spline1.heading(i)).toString());
+//        }
 
-        DrawRobot.drawPath(spline1, "#3F51B5");
+        // DrawRobot.drawPath(spline1, "#3F51B5");
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(-46, 15, Math.toRadians(0)), telemetry, true);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(-46, 15, Math.toRadians(-90)), telemetry, true);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -38,7 +40,8 @@ public class TestSpline extends LinearOpMode {
         }
         drive.setSpline_withSlowerHeadingChange(spline1, 0.3);
         telemetry.addLine("GATA");
-        telemetry.update();
+//        telemetry.addLine(drive.getTarget().toString());
+//        telemetry.update();
 
 
         waitForStart();
@@ -47,13 +50,15 @@ public class TestSpline extends LinearOpMode {
         while (opModeIsActive()) {
             while (opModeIsActive() && !drive.isDone()) {
                 drive.update();
+                telemetry.update();
             }
             if (gamepad1.a)
                 break;
+            drive.stop();
             //drive.setSpline_withSlowerHeadingChange(spline2, 0.6);
-            while (opModeIsActive() && !drive.isDone()) {
-                drive.update();
-            }
+            // while (opModeIsActive() && !drive.isDone()) {
+            //    drive.update();
+            // }
             //drive.setSpline_withSlowerHeadingChange(spline1, 0.4);
         }
     }

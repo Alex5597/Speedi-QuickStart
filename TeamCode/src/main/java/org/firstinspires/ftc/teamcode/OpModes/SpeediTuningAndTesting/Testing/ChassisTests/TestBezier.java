@@ -25,6 +25,7 @@ public class TestBezier extends LinearOpMode {
         while (!drive.isDone()) {
             drive.update();
             //drive.errorTelemetry(false);
+            telemetry.update();
         }
     }
 }

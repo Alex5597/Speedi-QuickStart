@@ -133,20 +133,23 @@ public class BezierSpline implements Spline {
 
     @Override
     public double findClosestPoint(Vector point) {
-        double lower = 0;
-        double upper = 1;
-
-        for (int i = 0; i < searchStepLimit_BinarySearch; i++) {
-            if (calculateMinimizationFunction(lower + 0.25 * (upper - lower), point) >
-                    calculateMinimizationFunction(lower + 0.75 * (upper - lower), point)) {
-                lower += (upper - lower) / 2.0;
+        double p = 0;
+        double u = 1;
+        int step = 0;
+        while (step <= searchStepLimit_BinarySearch && p <= u) {
+            double m = (p + u) / 2.0;
+            double left = (p + m) / 2.0;
+            double right = (u + m) / 2.0;
+            if (calculateMinimizationFunction(left, point) <= calculateMinimizationFunction(right, point)) {
+                u = m;
             } else {
-                upper -= (upper - lower) / 2.0;
+                p = m;
             }
+            step++;
         }
-
-        return lower + 0.5 * (upper - lower);
+        return p;
     }
+
 
     @Override
     public double getLengthAt(double t) {
@@ -194,8 +197,8 @@ public class BezierSpline implements Spline {
     }
 
 
-    private double calculateMinimizationFunction(double t, Vector point) {
-        return calculate(t).subtract(point).getMagnitude();
+    private double calculateMinimizationFunction(double t, Vector pose) {
+        return calculate(t).subtract(pose).getMagnitude();
     }
 
     @Override

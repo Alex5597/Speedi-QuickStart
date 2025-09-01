@@ -15,7 +15,7 @@ public class LocalizationTest extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, Math.toRadians(-35)), telemetry, true);
+        drive = new MecanumDrive(hardwareMap, new Pose(0, 0, Math.toRadians(0)), telemetry, true);
 
         try {
             sleep(500);

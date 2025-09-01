@@ -21,7 +21,7 @@ public class ChassisPIDTuner extends LinearOpMode {
     State state;
     Pose startPose = new Pose(0, 0, Math.toRadians(0));
 
-    public static double xTargetPos = 150, yTargetPos = 30, angleTargetPos = 90;//TODO Change how you want
+    public static double xTargetPos = 101, yTargetPos = 15, angleTargetPos = 0;//TODO Change how you want
     Pose targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
     int traj = 0;
 

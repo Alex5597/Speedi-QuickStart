@@ -100,7 +100,7 @@ public class CubicBezierCurve implements Spline {
 
     public double heading(double t) {
         if (targetAngle == Double.POSITIVE_INFINITY)
-            return firstDerivative(t).getRelativeHeading();
+            return firstAngle + firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading();
         else
             return targetAngle;
     }
@@ -167,19 +167,21 @@ public class CubicBezierCurve implements Spline {
 
     @Override
     public double findClosestPoint(Vector point) {
-        double lower = 0;
-        double upper = 1;
-
-        for (int i = 0; i < searchStepLimit_BinarySearch; i++) {
-            if (calculateMinimizationFunction(lower + 0.25 * (upper - lower), point) >
-                    calculateMinimizationFunction(lower + 0.75 * (upper - lower), point)) {
-                lower += (upper - lower) / 2.0;
+        double p = 0;
+        double u = 1;
+        int step = 0;
+        while (step <= searchStepLimit_BinarySearch && p <= u) {
+            double m = (p + u) / 2.0;
+            double left = (p + m) / 2.0;
+            double right = (u + m) / 2.0;
+            if (calculateMinimizationFunction(left, point) <= calculateMinimizationFunction(right, point)) {
+                u = m;
             } else {
-                upper -= (upper - lower) / 2.0;
+                p = m;
             }
+            step++;
         }
-
-        return lower + 0.5 * (upper - lower);
+        return p;
     }
 
     @Override
@@ -222,7 +224,7 @@ public class CubicBezierCurve implements Spline {
 
             Vector currentPoint = calculate(t);
             dashboardDrawingPoints[1][i] = -currentPoint.getX() / 2.54;
-            dashboardDrawingPoints[0][i] =  currentPoint.getY() / 2.54;
+            dashboardDrawingPoints[0][i] = currentPoint.getY() / 2.54;
 
             lengthArray.add(length);
             if (i < resolution) {

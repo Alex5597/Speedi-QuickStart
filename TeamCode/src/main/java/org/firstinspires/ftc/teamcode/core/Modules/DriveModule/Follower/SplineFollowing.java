@@ -2,8 +2,6 @@ package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_Spline;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.xPIDCoeff_Spline;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.yPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.shouldBrake;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
@@ -15,19 +13,16 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.Chassis;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
+import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SquidController;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
 public class SplineFollowing {
-    Chassis motors;
     public Spline trajectory;
-    Vector finalPower = new Vector(0, 0);
-    public static PIDController tPid = new PIDController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
+    public static SquidController tPid = new SquidController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
     public static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     Telemetry telemetry;
     double lastT = 0;
@@ -48,7 +43,7 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPID(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
+        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         // xPid.reset();
@@ -71,7 +66,7 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPID(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
+        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         //xPid.reset();
@@ -92,7 +87,7 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPID(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
+        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         //xPid.reset();
@@ -105,8 +100,12 @@ public class SplineFollowing {
         if (goToPoint)
             return new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE);
 
+        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
+        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+
         // Finding closest point
-        double currentT = trajectory.findClosestPoint(robotPose.toVec());
+        double currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT);
+        lastT = currentT;
         Vector currTargetPoint = trajectory.calculate(currentT + 1.0 / resolution);
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT + 1.0 / resolution));
         if (tangential)
@@ -156,7 +155,7 @@ public class SplineFollowing {
         telemetry.addData("Speed vect", speedAlongPath.toString());
         finalPower = finalPower.add(speedAlongPath);
 
-        return  finalPower;
+        return finalPower;
     }
 
     private double angleWrapper(double angle) {

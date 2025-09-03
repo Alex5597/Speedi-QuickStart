@@ -170,7 +170,7 @@ public class CubicBezierCurve implements Spline {
         double p = 0;
         double u = 1;
         int step = 0;
-        while (step <= searchStepLimit_BinarySearch && p <= u) {
+        while (step <= searchStepLimit_BinarySearch) {
             double m = (p + u) / 2.0;
             double left = (p + m) / 2.0;
             double right = (u + m) / 2.0;

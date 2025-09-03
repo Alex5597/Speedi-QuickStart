@@ -22,7 +22,10 @@ public class TestSpline extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        BezierSpline spline1 = new BezierSpline(new CubicBezierCurve(new Vector(-46, 15), new Vector(32, 15), new Vector(32, 15), new Vector(101, 15), Math.toRadians(90)));
+        BezierSpline spline1 = new BezierSpline(
+                new CubicBezierCurve(new Vector(0, 0), new Vector(0, 162), new Vector(60, 204), new Vector(60, 135), Math.toRadians(0)),
+                new CubicBezierCurve(new Vector(60, 135), new Vector(62, 67), new Vector(70, -40), new Vector(102, 161), Math.toRadians(0)));
+
         BezierSpline spline2 = new BezierSpline(new CubicBezierCurve(new Vector(30, 150), new Vector(-30, 132.7), new Vector(-46, -120), new Vector(-46, 15), Math.toRadians(-35)));
 
 //        for (double i = 0; i <= 1; i += 10.0 / resolution) {
@@ -32,7 +35,7 @@ public class TestSpline extends LinearOpMode {
 
         // DrawRobot.drawPath(spline1, "#3F51B5");
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(-46, 15, Math.toRadians(-90)), telemetry, true);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, Math.toRadians(0)), telemetry, true);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -55,11 +58,12 @@ public class TestSpline extends LinearOpMode {
             if (gamepad1.a)
                 break;
             drive.stop();
-            //drive.setSpline_withSlowerHeadingChange(spline2, 0.6);
-            // while (opModeIsActive() && !drive.isDone()) {
-            //    drive.update();
-            // }
-            //drive.setSpline_withSlowerHeadingChange(spline1, 0.4);
+
+            drive.setTargetPose(new Pose());
+            while (opModeIsActive() && !drive.isDone()) {
+                drive.update();
+            }
+            drive.setSpline_withSlowerHeadingChange(spline1, 0.4);
         }
     }
 }

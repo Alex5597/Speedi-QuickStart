@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Bezier
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
+import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
 @TeleOp
@@ -23,9 +24,9 @@ public class SplinePIDTuner extends LinearOpMode {
     }
 
     State state;
-    Pose startPose = new Pose(-46, 15, Math.toRadians(-35));
+    Pose startPose = new Pose(0, 0, Math.toRadians(0));
 
-    public static double xTargetPos = 130, yTargetPos = 0, angleTargetPos = 0;//TODO Change how you want (be careful of the tolerance)
+    public static double xTargetPos = 0, yTargetPos = 0, angleTargetPos = 0;//TODO Change how you want (be careful of the tolerance)
     Pose targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
     int traj = 0;
 
@@ -34,14 +35,13 @@ public class SplinePIDTuner extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new MecanumDrive(hardwareMap, startPose, telemetry, true);
         state = State.AUTO;
-        BezierSpline spline = new BezierSpline(Math.toRadians(angleTargetPos), new CubicBezierCurve(new Vector(0, 0), new Vector(0, 0), new Vector(0, 0), targetPos.toVec()));
+
         waitForStart();
 
         while (opModeIsActive()) {
             switch (state) {
                 case DRIVING:
                     if (gamepad1.b) {
-                        spline = new BezierSpline(Math.toRadians(angleTargetPos), new CubicBezierCurve(new Vector(0, 0), new Vector(0, 0), new Vector(0, 0), targetPos.toVec()));
                         drive.resetPosition(startPose);
                         state = State.AUTO;
                         traj = 0;
@@ -52,22 +52,14 @@ public class SplinePIDTuner extends LinearOpMode {
                     drive.PinPointErrorTelemetry(false);
                     break;
                 case AUTO:
-                    drive.setSpline_withInstantHeadingChange(spline);
-                    traj = 0;
+                    drive.setTargetPose(targetPos);
+                    Constants.holdFinalPoint = true;
+                    drive.setRunMode(MecanumDrive.RunMode.CalibrateSplinePID);
                     while (opModeIsActive()) {
-                        switch (traj) {
-                            case 0:
-                                if (drive.isDone()) {
-                                    traj++;
-                                    drive.setTargetPose(startPose);
-                                }
-                                break;
-                        }
-                        if (drive.isDone() && traj == 1)
-                            break;
                         drive.update();
                         if (gamepad1.a) {
                             state = State.DRIVING;
+                            drive.setRunMode(MecanumDrive.RunMode.MANUAL);
                             drive.stop();
                             break;
                         }

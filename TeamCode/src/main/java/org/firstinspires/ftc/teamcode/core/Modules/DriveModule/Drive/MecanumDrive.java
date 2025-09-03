@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff_finalAdj;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_GoToPoint;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_Spline;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_finalAdj;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Forward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Heading;
@@ -60,7 +61,7 @@ public class MecanumDrive implements Module {
     double startAngleTraj = 0;
 
     public enum RunMode {
-        PID, MANUAL, Spline
+        PID, MANUAL, Spline, CalibrateSplinePID
     }
 
     public SplineFollowing follower;
@@ -211,6 +212,7 @@ public class MecanumDrive implements Module {
         timerSinceStart.reset();
         timerResetedFailsafe = false;
     }
+
 
     public void setTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStop) {
         this.shouldWaitToStop = shouldWaitToStop;
@@ -383,8 +385,13 @@ public class MecanumDrive implements Module {
                     if (angleWrapper(err.getHeading()) <= Math.toRadians(5))
                         headingMultiplier = Heading;
                     motors.setMinPowersToOvercomeFriction();
-                    tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-                    hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+                    if (runMode != RunMode.CalibrateSplinePID) {
+                        tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+                        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+                    } else {
+                        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
+                        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+                    }
                 }
                 double distance = Math.hypot(rotatedErr.getX(), rotatedErr.getY());
 
@@ -397,7 +404,8 @@ public class MecanumDrive implements Module {
                 double headingPower = -hPid.calculate(-headingDiff, 0);
                 powerVector.setHeading(headingPower);
                 powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
-                powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
+                if (runMode != RunMode.CalibrateSplinePID)
+                    powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
 
                 motors.setMotorPower(powerVector);
                 break;

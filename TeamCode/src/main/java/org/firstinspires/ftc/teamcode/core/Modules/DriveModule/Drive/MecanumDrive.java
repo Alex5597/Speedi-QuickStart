@@ -125,9 +125,64 @@ public class MecanumDrive implements Module {
         hPid.reset();
 
     }
+
+    private static boolean pointInRect(Pose p, double left, double right, double bottom, double top) {
+        double x = p.getX(DistanceUnit.CM), y = p.getY(DistanceUnit.CM);
+        return x > left && x < right && y > bottom && y < top; // strict interior
+    }
+
+    private static Pose clampToOutside() {
+        throw new IllegalArgumentException("Target is inside no go zone");
+    }
+
+    private static boolean segmentIntersectsRect(Pose a, Pose b,
+                                                 double left, double right, double bottom, double top) {
+        // If either endpoint is strictly inside -> intersects
+        if (pointInRect(a, left, right, bottom, top) || pointInRect(b, left, right, bottom, top))
+            return true;
+
+        Pose tl = new Pose(left, top, DistanceUnit.CM);
+        Pose tr = new Pose(right, top, DistanceUnit.CM);
+        Pose br = new Pose(right, bottom, DistanceUnit.CM);
+        Pose bl = new Pose(left, bottom, DistanceUnit.CM);
+
+        return segmentsIntersect(a, b, tl, tr) || // top
+                segmentsIntersect(a, b, tr, br) || // right
+                segmentsIntersect(a, b, br, bl) || // bottom
+                segmentsIntersect(a, b, bl, tl);   // left
+    }
+
+    private static boolean segmentsIntersect(Pose p1, Pose q1, Pose p2, Pose q2) {
+        int o1 = orientation(p1, q1, p2);
+        int o2 = orientation(p1, q1, q2);
+        int o3 = orientation(p2, q2, p1);
+        int o4 = orientation(p2, q2, q1);
+        if (o1 != o2 && o3 != o4) return true;
+        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+        return o4 == 0 && onSegment(p2, q1, q2);
+    }
+
+    private static int orientation(Pose a, Pose b, Pose c) {
+        double val = (b.getY(DistanceUnit.CM) - a.getY(DistanceUnit.CM)) * (c.getX(DistanceUnit.CM) - b.getX(DistanceUnit.CM)) -
+                (b.getX(DistanceUnit.CM) - a.getX(DistanceUnit.CM)) * (c.getY(DistanceUnit.CM) - b.getY(DistanceUnit.CM));
+        if (Math.abs(val) < 1e-12) return 0;
+        return (val > 0) ? 1 : 2;
+    }
+
+    private static boolean onSegment(Pose p, Pose q, Pose r) {
+        double qx = q.getX(DistanceUnit.CM), qy = q.getY(DistanceUnit.CM);
+        return qx >= Math.min(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) - 1e-12 &&
+                qx <= Math.max(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) + 1e-12 &&
+                qy >= Math.min(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) - 1e-12 &&
+                qy <= Math.max(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) + 1e-12;
+    }
+
     public RunMode getRunMode() {
         return runMode;
     }
+
     public void setRunMode(RunMode runMode) {
         this.runMode = runMode;
     }
@@ -355,7 +410,7 @@ public class MecanumDrive implements Module {
         switch (runMode) {
             case PID:
             case CalibrateSplinePID:
-                if (willEnterNoGoZone) recalibrateTargetToAvoidNoGoZone();
+                if (willEnterNoGoZone && !goingToNewTargetForAvoidingNoGoZone) recalibrateTargetToAvoidNoGoZone();
                 Vector err = targetPose.subtract(currentPose).toVec();
                 err.setHeading(angleWrapper(err.getHeading()));
 
@@ -605,99 +660,14 @@ public class MecanumDrive implements Module {
         willEnterNoGoZone = false;
         noGoZone = false;
         goingToNewTargetForAvoidingNoGoZone = true;
-        double a = bottomRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double b = bottomLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double c = topLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double d = topRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-
-        double minDist = Math.min(Math.min(Math.min(a, b), c), d);
-        Queue<Pose> targetPoses = new LinkedList<>();
-        int numberOfTargets = countCornersBeforeDirect(localizer.getPoseEstimate(), targetPose, 10);
-
-        if (minDist == a) {
-            lastTarget = targetPose;
-            if (customTolerance)
-                lastTolerance = tolerance;
-            lastShouldWaitToStop = shouldWaitToStop;
-            bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-            targetPoses.add(bottomRightCorner);
-            bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
-            if (numberOfTargets == 2) {
-                if (targetPose.distanceTo(bottomLeftCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
-                    bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(bottomLeftCorner);
-                    bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
-                } else {
-                    topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(topRightCorner);
-                    topRightCorner.setHeading(0, AngleUnit.RADIANS);
-                }
-            }
-
-        } else if (minDist == b) {
-            lastTarget = targetPose;
-            if (customTolerance)
-                lastTolerance = tolerance;
-            lastShouldWaitToStop = shouldWaitToStop;
-            bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-            updateTargetPose(bottomLeftCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
-            bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
-            if (numberOfTargets == 2) {
-                if (targetPose.distanceTo(bottomRightCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
-                    bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(bottomRightCorner);
-                    bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
-                } else {
-                    topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(topLeftCorner);
-                    topLeftCorner.setHeading(0, AngleUnit.RADIANS);
-                }
-            }
-        } else if (minDist == c) {
-            lastTarget = targetPose;
-            if (customTolerance)
-                lastTolerance = tolerance;
-            lastShouldWaitToStop = shouldWaitToStop;
-            topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-            updateTargetPose(topLeftCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
-            topLeftCorner.setHeading(0, AngleUnit.RADIANS);
-            if (numberOfTargets == 2) {
-                if (targetPose.distanceTo(bottomLeftCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
-                    bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(bottomLeftCorner);
-                    bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
-                } else {
-                    topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(topRightCorner);
-                    topRightCorner.setHeading(0, AngleUnit.RADIANS);
-                }
-            }
-        } else if (minDist == d) {
-            lastTarget = targetPose;
-            if (customTolerance)
-                lastTolerance = tolerance;
-            lastShouldWaitToStop = shouldWaitToStop;
-            topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-            updateTargetPose(topRightCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
-            topRightCorner.setHeading(0, AngleUnit.RADIANS);
-            if (numberOfTargets == 2) {
-                if (targetPose.distanceTo(bottomRightCorner, DistanceUnit.CM) < targetPose.distanceTo(topLeftCorner, DistanceUnit.CM)) {
-                    bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(bottomRightCorner);
-                    bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
-                } else {
-                    topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
-                    targetPoses.add(topLeftCorner);
-                    topLeftCorner.setHeading(0, AngleUnit.RADIANS);
-                }
-            }
-        }
+        Queue<Pose> targetPoses = findBestCorners(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
         setTargetsList(targetPoses);
     }
 
-    public int countCornersBeforeDirect(Pose start, Pose target, double clearanceCm) {
-        if (!noGoZone) return 0;
-
+    public Queue<Pose> findBestCorners(Pose start, Pose target, double clearanceCm) {
+        willEnterNoGoZone = false;
+        noGoZone = false;
+        goingToNewTargetForAvoidingNoGoZone = true;
         // Inflate no-go rectangle by clearance (robot radius + margin)
         double left = topLeftCorner.getX(DistanceUnit.CM) - clearanceCm;
         double right = bottomRightCorner.getX(DistanceUnit.CM) + clearanceCm;
@@ -716,15 +686,39 @@ public class MecanumDrive implements Module {
                 new Pose(right + EPS, bottom - EPS, DistanceUnit.CM), // BR
                 new Pose(left - EPS, bottom - EPS, DistanceUnit.CM)  // BL
         };
+        Pose bestCorner;
         for (Pose c : corners) {
             if (!segmentIntersectsRect(s, c, left, right, bottom, top) &&
                     !segmentIntersectsRect(c, t, left, right, bottom, top)) {
-                return 1;
+                bestCorner = c;
+                Queue<Pose> poses = new LinkedList<>();
+                poses.add(bestCorner);
+                return poses;
             }
         }
+        double a = bottomRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double b = bottomLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double c = topLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double d = topRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
 
-        // Otherwise, 2 corners (wrapping around one side of the rectangle) will be sufficient
-        return 2;
+        double minDist = Math.min(Math.min(Math.min(a, b), c), d);
+        if (minDist == a)
+            bestCorner = bottomRightCorner;
+        else if (minDist == b)
+            bestCorner = bottomLeftCorner;
+        else if (minDist == c)
+            bestCorner = topLeftCorner;
+        else bestCorner = topRightCorner;
+        Queue<Pose> bestCorners = new LinkedList<>();
+        bestCorners.add(bestCorner);
+        for (Pose corner : corners) {
+            if (!segmentIntersectsRect(bestCorner, corner, left, right, bottom, top) &&
+                    !segmentIntersectsRect(corner, t, left, right, bottom, top)) {
+                bestCorners.add(corner);
+                return bestCorners;
+            }
+        }
+        return null;
     }
 
     public double getError(DistanceUnit distanceUnit) {
@@ -755,58 +749,6 @@ public class MecanumDrive implements Module {
 
     public Localizer getLocalizerInstance() {
         return localizer;
-    }
-    private static boolean pointInRect(Pose p, double left, double right, double bottom, double top) {
-        double x = p.getX(DistanceUnit.CM), y = p.getY(DistanceUnit.CM);
-        return x > left && x < right && y > bottom && y < top; // strict interior
-    }
-
-    private static Pose clampToOutside() {
-        throw new IllegalArgumentException("Target is inside no go zone");
-    }
-
-    private static boolean segmentIntersectsRect(Pose a, Pose b,
-                                                 double left, double right, double bottom, double top) {
-        // If either endpoint is strictly inside -> intersects
-        if (pointInRect(a, left, right, bottom, top) || pointInRect(b, left, right, bottom, top))
-            return true;
-
-        Pose tl = new Pose(left, top, DistanceUnit.CM);
-        Pose tr = new Pose(right, top, DistanceUnit.CM);
-        Pose br = new Pose(right, bottom, DistanceUnit.CM);
-        Pose bl = new Pose(left, bottom, DistanceUnit.CM);
-
-        return segmentsIntersect(a, b, tl, tr) || // top
-                segmentsIntersect(a, b, tr, br) || // right
-                segmentsIntersect(a, b, br, bl) || // bottom
-                segmentsIntersect(a, b, bl, tl);   // left
-    }
-
-    private static boolean segmentsIntersect(Pose p1, Pose q1, Pose p2, Pose q2) {
-        int o1 = orientation(p1, q1, p2);
-        int o2 = orientation(p1, q1, q2);
-        int o3 = orientation(p2, q2, p1);
-        int o4 = orientation(p2, q2, q1);
-        if (o1 != o2 && o3 != o4) return true;
-        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-        return o4 == 0 && onSegment(p2, q1, q2);
-    }
-
-    private static int orientation(Pose a, Pose b, Pose c) {
-        double val = (b.getY(DistanceUnit.CM) - a.getY(DistanceUnit.CM)) * (c.getX(DistanceUnit.CM) - b.getX(DistanceUnit.CM)) -
-                (b.getX(DistanceUnit.CM) - a.getX(DistanceUnit.CM)) * (c.getY(DistanceUnit.CM) - b.getY(DistanceUnit.CM));
-        if (Math.abs(val) < 1e-12) return 0;
-        return (val > 0) ? 1 : 2;
-    }
-
-    private static boolean onSegment(Pose p, Pose q, Pose r) {
-        double qx = q.getX(DistanceUnit.CM), qy = q.getY(DistanceUnit.CM);
-        return qx >= Math.min(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) - 1e-12 &&
-                qx <= Math.max(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) + 1e-12 &&
-                qy >= Math.min(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) - 1e-12 &&
-                qy <= Math.max(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) + 1e-12;
     }
 
     public enum RunMode {

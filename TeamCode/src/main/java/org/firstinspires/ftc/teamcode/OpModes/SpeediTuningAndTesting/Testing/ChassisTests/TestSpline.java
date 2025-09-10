@@ -35,7 +35,7 @@ public class TestSpline extends LinearOpMode {
 
         // DrawRobot.drawPath(spline1, "#3F51B5");
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, Math.toRadians(0)), telemetry, true);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
@@ -59,7 +59,7 @@ public class TestSpline extends LinearOpMode {
                 break;
             drive.stop();
 
-            drive.setTargetPose(new Pose());
+            drive.setTargetPose(new Pose(),true);
             while (opModeIsActive() && !drive.isDone()) {
                 drive.update();
             }

@@ -12,6 +12,7 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yDecelera
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.LowPassFilter;
@@ -93,11 +94,9 @@ public class PinPointLocalizer implements Localizer {
 
         double angle = angleWrapper(odo.getHeading());
         Pose2D pose = odo.getPosition();
-        currentPosition = new Pose(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), angle).rotateFieldCoordinate(-Math.PI / 2);
+        currentPosition = new Pose(pose).rotateFieldCoordinate(-Math.PI / 2);
         Vector velocity = velocityAdapter.getVelocity(currentPosition);
         velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()), velocity.getHeading());
-        //Vector driveTrainvelocity = velocityVectorRaw.rotate(0); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
-        lastVelocityVector = velocityVectorRaw;
         glideVector = new Vector(
                 Math.signum(velocityVectorRaw.getX()) * velocityVectorRaw.getX() * velocityVectorRaw.getX() / (2.0 * xDeceleration),
                 Math.signum(velocityVectorRaw.getY()) * velocityVectorRaw.getY() * velocityVectorRaw.getY() / (2.0 * yDeceleration),
@@ -106,13 +105,19 @@ public class PinPointLocalizer implements Localizer {
 
         if (predictedPose.isNaN()) {
             Globals.emergencyStop = true;
+            predictedPose = lastPosition;
         } else
-            lastPosition = predictedPose;
+            lastPosition = currentPosition;
 
-        if (predictedPose.isNaN())
-            predictedPose = currentPosition;
+        if (currentPosition.isNaN())
+            currentPosition = lastPosition;
         if (glideVector.isNaN())
-            glideVector = lastVelocityVector;
+            glideVector = new Vector(
+                    Math.signum(lastVelocityVector.getX()) * lastVelocityVector.getX() * lastVelocityVector.getX() / (2.0 * xDeceleration),
+                    Math.signum(lastVelocityVector.getY()) * lastVelocityVector.getY() * lastVelocityVector.getY() / (2.0 * yDeceleration),
+                    0);
+        if(!velocityVectorRaw.isNaN())
+            lastVelocityVector = velocityVectorRaw;
     }
 
     public Pose getLastPosition() {
@@ -155,7 +160,7 @@ public class PinPointLocalizer implements Localizer {
     public void updateOnlyImu() {
         odo.update(GoBildaPinpointDriver.readData.ONLY_UPDATE_HEADING);
         double angle = angleWrapper(odo.getHeading());
-        currentPosition = new Pose(0, 0, angle);
+        currentPosition = new Pose(0, 0,DistanceUnit.CM, angle, AngleUnit.RADIANS);
     }
 
     @Override

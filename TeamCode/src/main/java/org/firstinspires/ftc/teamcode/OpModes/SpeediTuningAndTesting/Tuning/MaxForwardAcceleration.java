@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
@@ -78,7 +79,7 @@ public class MaxForwardAcceleration extends LinearOpMode {
 
             // forward (along-heading) speed = projection of field velocity on robot heading
             Pose pose = drive.localizer.getPoseEstimate();
-            double heading = pose.getHeading();
+            double heading = pose.getHeading(AngleUnit.RADIANS);
             double vx = drive.localizer.getVelocity().getX();
             double vy = drive.localizer.getVelocity().getY();
             double vAlong = vx * Math.cos(heading) + vy * Math.sin(heading);

@@ -6,6 +6,8 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
@@ -21,7 +23,7 @@ public class DrawRobot {
         if (drive.getRunMode() == MecanumDrive.RunMode.Spline) {
             Spline spline = drive.curve;
             drawPath(spline, "#3F51B5");
-        } else if (drive.getRunMode() == MecanumDrive.RunMode.PID && drive.getTarget().getX() != WAIT_TIME_VARIABLE) {
+        } else if (drive.getRunMode() == MecanumDrive.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
             drawGoToPoint(pose, drive.getTarget(), "#3F51B5");
         }
         drawPoseHistory(drive.poseTracker, "#4CAF50");
@@ -31,15 +33,12 @@ public class DrawRobot {
 
     private static void drawGoToPoint(Pose current, Pose target, String color) {
         if (packet == null) packet = new TelemetryPacket();
-        current = current.toInches();
-        target = target.toInches();
-
         double[][] points = new double[2][2];
-        points[0][0] = current.getY();
-        points[0][1] = target.getY();
+        points[0][0] = current.getY(DistanceUnit.INCH);
+        points[0][1] = target.getY(DistanceUnit.INCH);
 
-        points[1][0] = -current.getX();
-        points[1][1] = -target.getX();
+        points[1][0] = -current.getX(DistanceUnit.INCH);
+        points[1][1] = -target.getX(DistanceUnit.INCH);
 
         packet.fieldOverlay().setStroke(color);
         drawPath(packet.fieldOverlay(), points);
@@ -79,16 +78,15 @@ public class DrawRobot {
     }
 
     private static void drawRobotOnCanvas(Canvas c, Pose t) {
-        t = t.toInches();
         t = t.invCoord();
-        t.setY(-t.getY());
+        t.setY(-t.getY(DistanceUnit.INCH),DistanceUnit.INCH);
         final double ROBOT_RADIUS = 9;
 
         c.setStrokeWidth(1);
-        c.strokeCircle(t.getX(), t.getY(), ROBOT_RADIUS);
+        c.strokeCircle(t.getX(DistanceUnit.INCH), t.getY(DistanceUnit.INCH), ROBOT_RADIUS);
 
-        Vector halfv = new Vector(Math.cos(t.getHeading()), Math.sin(t.getHeading())).scalarMultiply(ROBOT_RADIUS * 0.5);
-        Vector p1 = new Vector(t.getX() + halfv.getX(), t.getY() + halfv.getY());
+        Vector halfv = new Vector(Math.cos(t.getHeading(AngleUnit.RADIANS)), Math.sin(t.getHeading(AngleUnit.RADIANS))).scalarMultiply(ROBOT_RADIUS * 0.5);
+        Vector p1 = new Vector(t.getX(DistanceUnit.INCH) + halfv.getX(), t.getY(DistanceUnit.INCH) + halfv.getY());
         Vector p2 = p1.add(halfv);
         c.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
     }

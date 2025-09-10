@@ -5,6 +5,8 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
@@ -30,14 +32,14 @@ public class MinimumPowerToOvercomeFrictionDrivetrainTuner extends LinearOpMode 
         for (int i = 0; i < 4; i++) {
 
             for (int a = 0; a < iterations; a++) {
-                drive.resetPosition(new Pose(0, 0, 0));
+                drive.resetPosition(new Pose());
                 long start = System.currentTimeMillis();
                 for (double j = 0; j < 1; j = (double) (System.currentTimeMillis() - start) / (15000.0)) {
                     drive.update();
                     drive.motors.motors.get(i).setTargetPower(j);
 
                     robotPose = drive.getLocalizerInstance().getPoseEstimate();
-                    if (Math.abs(robotPose.getX()) > 1 || Math.abs(robotPose.getY()) > 1 || Math.abs(robotPose.getHeading()) > Math.toRadians(1.3)) {
+                    if (Math.abs(robotPose.getX(DistanceUnit.CM)) > 1 || Math.abs(robotPose.getY(DistanceUnit.CM)) > 1 || Math.abs(robotPose.getHeading(AngleUnit.RADIANS)) > Math.toRadians(1.3)) {
                         minPowersToOvercomeFriction[i] = j;
                         break;
                     }

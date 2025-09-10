@@ -21,7 +21,7 @@ public class CentripetalForceTuner extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         BezierSpline spline1 = new BezierSpline(new CubicBezierCurve(new Vector(0, 0), new Vector(-150, 0), new Vector(-150, 150), new Vector(0, 150), 0), new CubicBezierCurve(new Vector(0, 150), new Vector(150, 150), new Vector(150, 0), new Vector(5, 0), 0));
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry, true);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true);
         drive.setSpline_withInstantHeadingChange(spline1);
         telemetry.addLine("GATA");
         telemetry.update();
@@ -32,7 +32,7 @@ public class CentripetalForceTuner extends LinearOpMode {
                 drive.update();
                 telemetry.update();
             }
-            drive.setTargetPose(new Pose());
+            drive.setTargetPose(new Pose(),true);
             while (opModeIsActive() && !drive.isDone()) {
                 drive.update();
                 telemetry.update();

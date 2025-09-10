@@ -4,6 +4,8 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTick
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
@@ -22,6 +24,6 @@ public class VelocityAdapter {
         lastUpdateTime = System.nanoTime();
         Pose twist = pose.subtract(lastPose);
         lastPose = pose;
-        return new Vector(twist.getX() / deltaTimeSeconds, twist.getY() / deltaTimeSeconds, twist.getHeading() / deltaTimeSeconds);
+        return new Vector(twist.getX(DistanceUnit.CM) / deltaTimeSeconds, twist.getY(DistanceUnit.CM) / deltaTimeSeconds, twist.getHeading(AngleUnit.RADIANS) / deltaTimeSeconds);
     }
 }

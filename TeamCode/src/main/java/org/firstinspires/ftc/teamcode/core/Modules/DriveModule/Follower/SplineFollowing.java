@@ -13,6 +13,9 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SquidController;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
@@ -22,7 +25,7 @@ import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 @Config
 public class SplineFollowing {
     public Spline trajectory;
-    public static SquidController tPid = new SquidController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
+    public static PIDController tPid = new PIDController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
     public static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     Telemetry telemetry;
     double lastT = 0;
@@ -39,7 +42,7 @@ public class SplineFollowing {
         telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(startPose.getHeading());
+        trajectory.setFirstHeading(startPose.getHeading(AngleUnit.RADIANS));
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -62,7 +65,7 @@ public class SplineFollowing {
         telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(startPose.getHeading());
+        trajectory.setFirstHeading(startPose.getHeading(AngleUnit.RADIANS));
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -109,9 +112,9 @@ public class SplineFollowing {
         Vector currTargetPoint = trajectory.calculate(currentT + 1.0 / resolution);
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT + 1.0 / resolution));
         if (tangential)
-            targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution));
+            targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution),AngleUnit.RADIANS);
         else if (!instantHeading)
-            targetPose.setHeading(hlerp(robotPose.getHeading(), trajectory.heading(currentT + 1.0 / resolution), tLerp));
+            targetPose.setHeading(hlerp(robotPose.getHeading(AngleUnit.RADIANS), trajectory.heading(currentT + 1.0 / resolution), tLerp), AngleUnit.RADIANS);
 
         // Check for final adjustment
         if (currentT >= 0.9 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= glideVector.getMagnitude() && shouldBrake) {
@@ -122,16 +125,14 @@ public class SplineFollowing {
         }
 
         double curvature = trajectory.curvatureOfThePath(currentT);
-        Vector centripetalCorrectionVector = Vector.polar(Range.clip(Constants.FollowerConstants.CentripetalScalingFactor * Constants.FollowerConstants.TotalMassOfRobot * Math.pow(Vector.dot(trajectory.firstDerivative(currentT).scaleToMagnitude(1), velocityVector), 2) * curvature, -1, 1), trajectory.firstDerivative(currentT).getRelativeHeading() + Math.PI / 2 * Math.signum(trajectory.pathNormalVect(currentT).getRelativeHeading()));
+        Vector centripetalCorrectionVector = Vector.polar(Range.clip(Constants.FollowerConstants.CentripetalScalingFactor * Constants.FollowerConstants.TotalMassOfRobot * Math.pow(Vector.dot(trajectory.firstDerivative(currentT).scaleToMagnitude(1), velocityVector), 2) * curvature, -0.8, 0.8), trajectory.firstDerivative(currentT).getRelativeHeading() + Math.PI / 2 * Math.signum(trajectory.pathNormalVect(currentT).getRelativeHeading()));
         telemetry.addData("Centripetal vect", centripetalCorrectionVector.toString());
-        if (centripetalCorrectionVector.getMagnitude() >= 1)
-            return centripetalCorrectionVector;
 
         Pose err = targetPose.subtract(robotPose);
-        double distance = Math.hypot(err.getX(), err.getY());
+        double distance = Math.hypot(err.getX(DistanceUnit.CM), err.getY(DistanceUnit.CM));
 
-        double calculatedCos = err.getX() / distance;
-        double calculatedSin = err.getY() / distance;
+        double calculatedCos = err.getX(DistanceUnit.CM) / distance;
+        double calculatedSin = err.getY(DistanceUnit.CM) / distance;
         double translationalPower = tPid.calculate(-distance, 0);
         Vector pidCorrectionVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).scaleToMagnitude(1);
         telemetry.addData("Pid vect", pidCorrectionVector.toString());
@@ -143,7 +144,7 @@ public class SplineFollowing {
             return centripetalCorrectionVector.add(pidCorrectionVector);
         }
 
-        double headingDiff = angleWrapper(err.getHeading());
+        double headingDiff = angleWrapper(err.getHeading(AngleUnit.RADIANS));
         double headingPower = -hPid.calculate(-headingDiff, 0);
         finalPower.setHeading(headingPower);
         telemetry.addData("Heading power", headingPower);

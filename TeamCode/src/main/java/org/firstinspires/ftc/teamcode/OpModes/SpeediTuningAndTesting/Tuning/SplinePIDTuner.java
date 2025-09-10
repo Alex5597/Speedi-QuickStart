@@ -6,6 +6,8 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
@@ -24,10 +26,10 @@ public class SplinePIDTuner extends LinearOpMode {
     }
 
     State state;
-    Pose startPose = new Pose(0, 0, Math.toRadians(0));
+    Pose startPose = new Pose();
 
     public static double xTargetPos = 0, yTargetPos = 0, angleTargetPos = 0;//TODO Change how you want (be careful of the tolerance)
-    Pose targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
+    Pose targetPos = new Pose(xTargetPos, yTargetPos, DistanceUnit.CM, angleTargetPos, AngleUnit.DEGREES);
     int traj = 0;
 
     @Override
@@ -52,7 +54,7 @@ public class SplinePIDTuner extends LinearOpMode {
                     drive.PinPointErrorTelemetry(false);
                     break;
                 case AUTO:
-                    drive.setTargetPose(targetPos);
+                    drive.setTargetPose(targetPos,true);
                     Constants.holdFinalPoint = true;
                     drive.setRunMode(MecanumDrive.RunMode.CalibrateSplinePID);
                     while (opModeIsActive()) {

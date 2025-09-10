@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.LowPassFilter;
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.Encoder;
@@ -52,7 +53,7 @@ public class TwoWheelLocalizer implements Localizer {
         currentPosition = startPose;
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
-        startAngle = startPose.getHeading();
+        startAngle = startPose.getHeading(AngleUnit.RADIANS);
         lastAngle = startAngle;
 
         par = new Encoder(hardwareMap.get(DcMotorEx.class, "LFM"));
@@ -115,10 +116,12 @@ public class TwoWheelLocalizer implements Localizer {
                 new Pose(
                         -(dy * (a * d + e * b) + dx * (e * a + c * d)),
                         dy * (b * d - e * a) + dx * (a * d - e * c),
-                        Δ_theta
+                        DistanceUnit.CM,
+                        Δ_theta,
+                        AngleUnit.RADIANS
                 )
         );
-        currentPosition.setHeading(angleWrapper(currentPosition.getHeading()));
+        currentPosition.setHeading(angleWrapper(currentPosition.getHeading(AngleUnit.RADIANS)),AngleUnit.RADIANS);
 
 
         velocity = new Vector(yVelocityFilter.getValue(-dyVelocity), xVelocityFilter.getValue(dxVelocity));
@@ -138,7 +141,7 @@ public class TwoWheelLocalizer implements Localizer {
     @Override
     public void updateOnlyImu() {
         double angle = startAngle + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading;
-        currentPosition.setHeading(angleWrapper(angle));
+        currentPosition.setHeading(angleWrapper(angle),AngleUnit.RADIANS);
     }
 
     @Override
@@ -169,7 +172,7 @@ public class TwoWheelLocalizer implements Localizer {
 
         imu.resetYaw();
         initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        startAngle = startPose.getHeading();
+        startAngle = startPose.getHeading(AngleUnit.RADIANS);
 
         if (isAuto) {
             par = new Encoder(hardwareMap.get(DcMotorEx.class, "LFM"), (int) par.getCurrentPosition());

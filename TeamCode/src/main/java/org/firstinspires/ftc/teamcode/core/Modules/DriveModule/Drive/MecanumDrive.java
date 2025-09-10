@@ -13,7 +13,6 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMu
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headingMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.holdFinalPoint;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.resetMultipliers;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useDashboard;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useFinalAdj;
@@ -26,6 +25,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
@@ -42,48 +43,42 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class MecanumDrive implements Module {
-    Telemetry telemetry;
-    HardwareMap hardwareMap;
+    private static final SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+    private static final PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     public PinPointLocalizer localizer;
     public Chassis motors;
-    private Pose targetPose = new Pose(), lastTarget = new Pose();
-    private Vector speedVector = new Vector(0, 0, 0);
+    public boolean robotIsStuck = false;
+    public SplineFollowing follower;
+    public Spline curve = null;
+    public DashboardPoseTracker poseTracker;
+    Telemetry telemetry;
+    HardwareMap hardwareMap;
     Vector powerVector;
-    boolean timerResetedFailsafe = false, trajectoryDone = true, waitingTimer = false;
+    boolean timerResetedFailsafe = false, trajectoryDone = true;
     ElapsedTime timer = new ElapsedTime(), failsafeTimer = new ElapsedTime();
     Queue<Pose> targetPositions = new LinkedList<>();
     boolean isOnlyTarget = false;
-    private static SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-    private static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     ElapsedTime timerSinceStart = new ElapsedTime();
-    public boolean robotIsStuck = false;
-    private int n;
     double startAngleTraj = 0;
-
-    public enum RunMode {
-        PID, MANUAL, Spline, CalibrateSplinePID
-    }
-
-    public SplineFollowing follower;
     RunMode runMode = RunMode.MANUAL;
-
-    public RunMode getRunMode() {
-        return runMode;
-    }
-
-    public Spline curve = null;
-    public DashboardPoseTracker poseTracker;
     boolean customTolerance = false;
-    Pose tolerance = new Pose();
-    boolean shouldWaitToStop = false;
+    Pose tolerance = new Pose(), lastTolerance = new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS);
+    double noGoZoneTolerance = 0;
+    boolean shouldWaitToStop = false, lastShouldWaitToStop = false;
+    boolean noGoZone = false, willEnterNoGoZone = false, goingToNewTargetForAvoidingNoGoZone = false;
+    Pose topLeftCorner = new Pose(), topRightCorner = new Pose(), bottomLeftCorner = new Pose(), bottomRightCorner = new Pose();
+    private Pose lastTarget = new Pose();
+    private Pose targetPose = new Pose();
+    private Vector speedVector = new Vector(0, 0, 0);
+    private int n;
+
 
     public MecanumDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
         motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
 
-        if (useDashboard)
-            poseTracker = new DashboardPoseTracker(localizer);
+        if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
         timer.reset();
         timerSinceStart.reset();
         this.telemetry = telemetry;
@@ -101,8 +96,7 @@ public class MecanumDrive implements Module {
         motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
 
-        if (useDashboard)
-            poseTracker = new DashboardPoseTracker(localizer);
+        if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
         timer.reset();
         timerSinceStart.reset();
         this.telemetry = telemetry;
@@ -119,8 +113,7 @@ public class MecanumDrive implements Module {
         Globals.isAuto = isAuto;
         motors = new Chassis(hardwareMap, brake);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
-        if (useDashboard)
-            poseTracker = new DashboardPoseTracker(localizer);
+        if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
         timer.reset();
         timerSinceStart.reset();
         this.telemetry = telemetry;
@@ -132,6 +125,12 @@ public class MecanumDrive implements Module {
         hPid.reset();
 
     }
+    public RunMode getRunMode() {
+        return runMode;
+    }
+    public void setRunMode(RunMode runMode) {
+        this.runMode = runMode;
+    }
 
     public void setSpline_withInstantHeadingChange(Spline trajectory) {
         this.runMode = RunMode.Spline;
@@ -139,7 +138,7 @@ public class MecanumDrive implements Module {
         localizer.update();
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
         robotIsStuck = false;
         timerSinceStart.reset();
@@ -159,7 +158,7 @@ public class MecanumDrive implements Module {
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
         timerSinceStart.reset();
         timerResetedFailsafe = false;
@@ -172,14 +171,10 @@ public class MecanumDrive implements Module {
         follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
         timerSinceStart.reset();
         timerResetedFailsafe = false;
-    }
-
-    public void setRunMode(RunMode runMode) {
-        this.runMode = runMode;
     }
 
     public void setSpeedVector(Vector speedVector) {
@@ -187,50 +182,17 @@ public class MecanumDrive implements Module {
         this.speedVector = speedVector;
     }
 
-    public void setTargetPose(Pose targetPose, boolean shouldWaitToStop) {
-        this.shouldWaitToStop = shouldWaitToStop;
+    public void setTargetPose(Pose targetPose, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
         this.runMode = RunMode.PID;
         this.targetPose = targetPose;
         targetPositions.clear();
         trajectoryDone = false;
         isOnlyTarget = true;
         robotIsStuck = false;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         timerSinceStart.reset();
         timerResetedFailsafe = false;
-    }
-
-    public void setTargetPose(Pose targetPose) {
-        this.shouldWaitToStop = true;
-        this.runMode = RunMode.PID;
-        this.targetPose = targetPose;
-        targetPositions.clear();
-        trajectoryDone = false;
-        isOnlyTarget = true;
-        robotIsStuck = false;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
-        timerSinceStart.reset();
-        timerResetedFailsafe = false;
-    }
-
-
-    public void setTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStop) {
-        this.shouldWaitToStop = shouldWaitToStop;
-        this.runMode = RunMode.PID;
-        this.targetPose = targetPose;
-        targetPositions.clear();
-        trajectoryDone = false;
-        isOnlyTarget = true;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
-        timerSinceStart.reset();
-        timerResetedFailsafe = false;
-        customTolerance = true;
-        robotIsStuck = false;
-        this.tolerance = tolerance;
-
-
-        motors.setMotorPower(new Vector(0, 0, 0));
-        resetMultipliers();
         motors.setMinPowersToOvercomeFriction();
 
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
@@ -240,22 +202,20 @@ public class MecanumDrive implements Module {
         hPid.reset();
     }
 
-    public void setTargetPose(Pose targetPose, Pose tolerance) {
-        this.shouldWaitToStop = true;
+    public void setTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
         this.runMode = RunMode.PID;
         this.targetPose = targetPose;
         targetPositions.clear();
         trajectoryDone = false;
         isOnlyTarget = true;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         timerSinceStart.reset();
         timerResetedFailsafe = false;
         customTolerance = true;
         robotIsStuck = false;
         this.tolerance = tolerance;
 
-
-        motors.setMotorPower(new Vector(0, 0, 0));
         motors.setMinPowersToOvercomeFriction();
 
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
@@ -265,14 +225,14 @@ public class MecanumDrive implements Module {
         hPid.reset();
     }
 
-    public void updatePose(Pose targetPose, Pose tolerance) {
-        this.shouldWaitToStop = true;
+    public void updateTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
         this.runMode = RunMode.PID;
         this.targetPose = targetPose;
         targetPositions.clear();
         trajectoryDone = false;
         isOnlyTarget = true;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         customTolerance = true;
         robotIsStuck = false;
         timerSinceStart.reset();
@@ -280,14 +240,14 @@ public class MecanumDrive implements Module {
         timerResetedFailsafe = false;
     }
 
-    public void updatePose(Pose targetPose) {
-        this.shouldWaitToStop = true;
+    public void updateTargetPose(Pose targetPose, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
         this.runMode = RunMode.PID;
         this.targetPose = targetPose;
         targetPositions.clear();
         trajectoryDone = false;
         isOnlyTarget = true;
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         customTolerance = false;
         robotIsStuck = false;
         timerSinceStart.reset();
@@ -297,9 +257,10 @@ public class MecanumDrive implements Module {
     public void setTargetsList(Queue<Pose> targetPositions) {
         this.runMode = RunMode.PID;
         this.targetPositions = targetPositions;
+        this.shouldWaitToStop = false;
         n = targetPositions.size();
         targetPose = targetPositions.poll();
-        startAngleTraj = localizer.getPoseEstimate().getHeading();
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
         isOnlyTarget = false;
         robotIsStuck = false;
@@ -307,9 +268,20 @@ public class MecanumDrive implements Module {
         timerResetedFailsafe = false;
     }
 
+    /**
+     * Strafes a distance on OX and OY relative to the robot
+     *
+     * @param distanceInCmLateral                            the distance to drive laterally (negative to drive left and positive to drive right)
+     * @param distanceInCmForward                            the distance to drive forwardly (negative to drive back and positive to drive forward)
+     * @param degreesToTurn                                  the number of degrees to turn
+     * @param shouldWaitToStopCompletelyAtTheEndOfTrajectory either the robot should stop completely or not at the end of the strafe
+     */
+    public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
+    }
+
     public boolean stopped() {
-        if (!shouldWaitToStop)
-            return true;
+        if (!shouldWaitToStop) return true;
         return localizer.getVelocity().getMagnitude() <= velocityThreshold;
     }
 
@@ -323,27 +295,48 @@ public class MecanumDrive implements Module {
             }
             if (runMode != RunMode.MANUAL) {
                 if (!customTolerance) {
-                    if (reachedTarget(4) && reachedHeading(3) && stopped()) {
-                        trajectoryDone = true;
+                    if (reachedTarget(3) && reachedHeading(3) && stopped()) {
+                        if (isOnlyTarget)
+                            trajectoryDone = true;
+                        else {
+                            targetPose = targetPositions.poll();
+                            trajectoryDone = false;
+                        }
                         robotIsStuck = false;
                     }
-                } else if (getXError() <= tolerance.getX() && getYError() <= tolerance.getY() && reachedHeading(tolerance.getHeading()) && stopped()) {
-                    trajectoryDone = true;
-                    robotIsStuck = false;
+                } else if (getXError(DistanceUnit.CM) <= tolerance.getX(DistanceUnit.CM) && getYError(DistanceUnit.CM) <= tolerance.getY(DistanceUnit.CM) && reachedHeading(tolerance.getHeading(AngleUnit.RADIANS)) && stopped()) {
+                    if (isOnlyTarget) {
+                        trajectoryDone = true;
+                        robotIsStuck = false;
+                    } else {
+                        targetPose = targetPositions.poll();
+                        trajectoryDone = false;
+                    }
                 }
 
-                if (!trajectoryDone)
+                if (goingToNewTargetForAvoidingNoGoZone && trajectoryDone) {
+                    goingToNewTargetForAvoidingNoGoZone = false;
+                    willEnterNoGoZone = false;
+                    noGoZone = true;
+                    if (!lastTolerance.equals(new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS)))
+                        updateTargetPose(lastTarget, lastTolerance, lastShouldWaitToStop);
+                    else
+                        updateTargetPose(lastTarget, lastShouldWaitToStop);
+                    lastTolerance = new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS);
+                }
+
+                if (!trajectoryDone) {
                     checkIfRobotIsStuck();
+                    if (noGoZone) checkIfInsideNoGoZone(localizer.getPredictedPoseEstimate());
+                }
 
                 if (robotIsStuck) {
                     trajectoryDone = true;
                     motors.setMotorPower(0, 0, 0, 0);
                     powerVector = new Vector(0, 0, 0);
                 } else {
-                    if (!trajectoryDone || holdFinalPoint)
-                        updatePowerVector();
-                    else
-                        motors.setMotorPower(0, 0, 0, 0);
+                    if (!trajectoryDone || holdFinalPoint) updatePowerVector();
+                    else motors.setMotorPower(0, 0, 0, 0);
                 }
             }
 
@@ -356,54 +349,51 @@ public class MecanumDrive implements Module {
 
     public void updatePowerVector() {
         Pose currentPose;
-        if (!shouldUsePhysicalBraking)
-            currentPose = localizer.getPoseEstimate();
-        else
-            currentPose = localizer.getPredictedPoseEstimate();
+        if (!shouldUsePhysicalBraking) currentPose = localizer.getPoseEstimate();
+        else currentPose = localizer.getPredictedPoseEstimate();
 
         switch (runMode) {
             case PID:
-                Pose err = targetPose.subtract(currentPose);
-                Vector rotatedErr = err.toVec().rotate(currentPose.getHeading());
-                rotatedErr.setHeading(angleWrapper(rotatedErr.getHeading()));
+            case CalibrateSplinePID:
+                if (willEnterNoGoZone) recalibrateTargetToAvoidNoGoZone();
+                Vector err = targetPose.subtract(currentPose).toVec();
+                err.setHeading(angleWrapper(err.getHeading()));
 
-                if (rotatedErr.getMagnitude() <= 10) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
-                    rotatedErr = targetPose.subtract(localizer.getPoseEstimate()).toVec().rotate(currentPose.getHeading());
+                if (reachedTarget(10) && reachedHeading(5) && runMode != RunMode.CalibrateSplinePID) {// && angleWrapper(err.getHeading()) <= Math.toRadians(5)) {
                     lateralMultiplier = 1;
                     headingMultiplier = 1;
                     forwardMultiplier = 1;
                     motors.resetMinPowersToOvercomeFriction();
                     if (useFinalAdj) {
+                        err = targetPose.subtract(localizer.getPoseEstimate()).toVec();
                         tPid.setPIDF(tPIDCoeff_finalAdj.p, tPIDCoeff_finalAdj.i, tPIDCoeff_finalAdj.d, 0);
                         hPid.setPIDF(hPIDCoeff_finalAdj.p, hPIDCoeff_finalAdj.i, hPIDCoeff_finalAdj.d, 0);
                     }
                 } else {
-                    if (getXError() <= 5)
-                        lateralMultiplier = Lateral;
-                    if (getYError() <= 5)
-                        forwardMultiplier = Forward;
-                    if (angleWrapper(err.getHeading()) <= Math.toRadians(5))
+                    if (getXError(DistanceUnit.CM) <= 3) lateralMultiplier = Lateral;
+                    if (getYError(DistanceUnit.CM) <= 3) forwardMultiplier = Forward;
+                    if (angleWrapper(err.getHeading()) <= Math.toRadians(3))
                         headingMultiplier = Heading;
-                    motors.setMinPowersToOvercomeFriction();
                     if (runMode != RunMode.CalibrateSplinePID) {
                         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
                         hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
                     } else {
+                        motors.setMinPowersToOvercomeFriction();
                         tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
                         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
                     }
                 }
-                double distance = Math.hypot(rotatedErr.getX(), rotatedErr.getY());
 
-                double calculatedCos = rotatedErr.getX() / distance;
-                double calculatedSin = rotatedErr.getY() / distance;
+                double distance = Math.hypot(err.getX(), err.getY());
+                double calculatedCos = err.getX() / distance;
+                double calculatedSin = err.getY() / distance;
                 double translationalPower = tPid.calculate(-distance, 0);
                 powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin);
 
-                double headingDiff = angleWrapper(rotatedErr.getHeading());
+                double headingDiff = angleWrapper(err.getHeading());
                 double headingPower = -hPid.calculate(-headingDiff, 0);
                 powerVector.setHeading(headingPower);
-                powerVector = powerVector.scaleToMagnitude_AngularAsWell(1);
+                powerVector = powerVector.rotate(currentPose.getHeading(AngleUnit.RADIANS)).scaleToMagnitude_AngularAsWell(1);
                 if (runMode != RunMode.CalibrateSplinePID)
                     powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
 
@@ -413,10 +403,9 @@ public class MecanumDrive implements Module {
                 Vector followerPower = follower.getMotorPower(currentPose, localizer.getVelocity(), localizer.getGlideVector());
                 if (!followerPower.isNaN()) {
                     if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE))) {
-                        powerVector = followerPower.rotate(currentPose.getHeading());
+                        powerVector = followerPower.rotate(currentPose.getHeading(AngleUnit.RADIANS));
                         motors.setMotorPower(powerVector);
-                    } else
-                        updatePose(targetPose);
+                    } else updateTargetPose(targetPose, false);
                 }
                 break;
             case MANUAL:
@@ -433,35 +422,34 @@ public class MecanumDrive implements Module {
         if (runMode == RunMode.MANUAL || robotIsStuck) return true;
         Pose err;
         Pose robotPose = localizer.getPoseEstimate();
-        if (targetPose.getX() != WAIT_TIME_VARIABLE)
+        if (targetPose.getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE)
             err = targetPose.subtract(robotPose);
         else err = lastTarget.subtract(robotPose);
         return err.toVec().getMagnitude() <= toleranceInCm;
     }
 
-
     public boolean reachedHeading(double toleranceInDegrees) {
         if (runMode == RunMode.MANUAL) return true;
         Pose error;
-        if (targetPose.getX() != WAIT_TIME_VARIABLE)
+        if (targetPose.getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE)
             error = targetPose.subtract(localizer.getPoseEstimate());
         else error = lastTarget.subtract(localizer.getPoseEstimate());
-        return Math.abs(Math.toDegrees(angleWrapper(error.getHeading()))) <= toleranceInDegrees;
+        return Math.abs(Math.toDegrees(angleWrapper(error.getHeading(AngleUnit.RADIANS)))) <= toleranceInDegrees;
     }
 
-    public double getXError() {
+    public double getXError(DistanceUnit distanceUnit) {
         Pose currPose = localizer.getPoseEstimate();
-        return Math.abs(targetPose.getX() - currPose.getX());
+        return Math.abs(targetPose.getX(distanceUnit) - currPose.getX(distanceUnit));
     }
 
-    public double getYError() {
+    public double getYError(DistanceUnit distanceUnit) {
         Pose currPose = localizer.getPoseEstimate();
-        return Math.abs(targetPose.getY() - currPose.getY());
+        return Math.abs(targetPose.getY(distanceUnit) - currPose.getY(distanceUnit));
     }
 
-    public double getHeadingError() {
+    public double getHeadingError(AngleUnit angleUnit) {
         Pose currPose = localizer.getPoseEstimate();
-        return Math.abs(angleWrapper(targetPose.getHeading() - currPose.getHeading()));
+        return Math.abs(angleWrapper(targetPose.getHeading(angleUnit) - currPose.getHeading(angleUnit)));
     }
 
     private void checkIfRobotIsStuck() {
@@ -489,27 +477,26 @@ public class MecanumDrive implements Module {
 
     public void errorTelemetry(boolean updated) {
         Pose error;
-        if (targetPose.getX() != WAIT_TIME_VARIABLE)
+        if (targetPose.getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE)
             error = targetPose.subtract(localizer.getPoseEstimate());
-        else
-            error = lastTarget.subtract(localizer.getPoseEstimate());
+        else error = lastTarget.subtract(localizer.getPoseEstimate());
         targetTelemetry(true);
-        telemetry.addData("error x", error.getX());
-        telemetry.addData("error y", error.getY());
-        telemetry.addData("error heading", error.getHeading());
+        telemetry.addData("error x", error.getX(DistanceUnit.CM));
+        telemetry.addData("error y", error.getY(DistanceUnit.CM));
+        telemetry.addData("error heading", error.getHeading(AngleUnit.DEGREES));
 
-        telemetry.addData("Dist", Math.hypot(error.getX(), error.getY()));
+        telemetry.addData("Dist", Math.hypot(error.getX(DistanceUnit.CM), error.getY(DistanceUnit.CM)));
         telemetry.addData("is Done", (reachedTarget(3) && reachedHeading(2) && stopped()));
         telemetry.addData("Stopped", stopped());
         telemetry.addData("Target", (reachedTarget(3)));
         telemetry.addData("Target heading", (reachedHeading(2)));
-        telemetry.addData("Condition", Math.abs(Math.toDegrees(angleWrapper(error.getHeading()))));
+        telemetry.addData("Condition", Math.abs(Math.toDegrees(angleWrapper(error.getHeading(AngleUnit.RADIANS)))));
         telemetry.addData("Robot is Stuck", robotIsStuck);
         if (!updated) telemetry.update();
     }
 
     public void targetTelemetry(boolean updated) {
-        if (targetPose.getX() != WAIT_TIME_VARIABLE) {
+        if (targetPose.getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
             telemetry.addData("Target", targetPose.toString());
         } else {
             telemetry.addData("Target", lastTarget.toString());
@@ -540,12 +527,12 @@ public class MecanumDrive implements Module {
 
     @Deprecated
     public boolean afterThisX(double xPos) {
-        return Math.abs(xPos - localizer.getPoseEstimate().getX()) <= 0.2;///NU merge trebuie gasita formula
+        return Math.abs(xPos - localizer.getPoseEstimate().getX(DistanceUnit.CM)) <= 0.2;///NU merge trebuie gasita formula
     }
 
     @Deprecated
     public boolean afterThisY(double yPos) {
-        return (localizer.getPoseEstimate().getY() - yPos) <= 2; ///NU merge trebuie gasita formula
+        return (localizer.getPoseEstimate().getY(DistanceUnit.CM) - yPos) <= 2; ///NU merge trebuie gasita formula
     }
 
     @Deprecated
@@ -573,9 +560,176 @@ public class MecanumDrive implements Module {
         hPid.reset();
     }
 
-    public double getError() {
+    public void setNoGoZone(Pose topLeftCorner, Pose bottomRightCorner, double noGoTolerance) {
+        this.noGoZoneTolerance = noGoTolerance;
+        this.topLeftCorner = topLeftCorner;
+        this.topRightCorner = new Pose(bottomRightCorner.getX(DistanceUnit.CM), topLeftCorner.getY(DistanceUnit.CM), DistanceUnit.CM);
+        this.bottomRightCorner = bottomRightCorner;
+        this.bottomLeftCorner = new Pose(topLeftCorner.getX(DistanceUnit.CM), bottomRightCorner.getY(DistanceUnit.CM), DistanceUnit.CM);
+        if (topLeftCorner.getX(DistanceUnit.CM) >= bottomRightCorner.getX(DistanceUnit.CM) || topLeftCorner.getY(DistanceUnit.CM) <= bottomRightCorner.getY(DistanceUnit.CM))
+            throw new IllegalArgumentException("Zona no go definita gresit. Deschide desmos si verifica.");
+        noGoZone = true;
+        willEnterNoGoZone = false;
+    }
+
+    public void disableNoGoZone() {
+        this.topLeftCorner = new Pose();
+        this.topRightCorner = new Pose();
+        this.bottomRightCorner = new Pose();
+        this.bottomLeftCorner = new Pose();
+        noGoZone = false;
+        willEnterNoGoZone = false;
+    }
+
+    private boolean isInsideNoGoZone(Pose p) {
+        double x = p.getX(DistanceUnit.CM);
+        double y = p.getY(DistanceUnit.CM);
+
+        double left = topLeftCorner.getX(DistanceUnit.CM);
+        double right = bottomRightCorner.getX(DistanceUnit.CM);
+        double top = topLeftCorner.getY(DistanceUnit.CM);
+        double bottom = bottomRightCorner.getY(DistanceUnit.CM);
+
+        return x >= left - noGoZoneTolerance && x <= right + noGoZoneTolerance &&
+                y >= bottom - noGoZoneTolerance && y <= top + noGoZoneTolerance;
+    }
+
+    public void checkIfInsideNoGoZone(Pose positionToCheck) {
+        if (!willEnterNoGoZone)
+            if (isInsideNoGoZone(positionToCheck)) {
+                willEnterNoGoZone = true;
+            }
+    }
+
+    public void recalibrateTargetToAvoidNoGoZone() {
+        willEnterNoGoZone = false;
+        noGoZone = false;
+        goingToNewTargetForAvoidingNoGoZone = true;
+        double a = bottomRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double b = bottomLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double c = topLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double d = topRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+
+        double minDist = Math.min(Math.min(Math.min(a, b), c), d);
+        Queue<Pose> targetPoses = new LinkedList<>();
+        int numberOfTargets = countCornersBeforeDirect(localizer.getPoseEstimate(), targetPose, 10);
+
+        if (minDist == a) {
+            lastTarget = targetPose;
+            if (customTolerance)
+                lastTolerance = tolerance;
+            lastShouldWaitToStop = shouldWaitToStop;
+            bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+            targetPoses.add(bottomRightCorner);
+            bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
+            if (numberOfTargets == 2) {
+                if (targetPose.distanceTo(bottomLeftCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
+                    bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(bottomLeftCorner);
+                    bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
+                } else {
+                    topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(topRightCorner);
+                    topRightCorner.setHeading(0, AngleUnit.RADIANS);
+                }
+            }
+
+        } else if (minDist == b) {
+            lastTarget = targetPose;
+            if (customTolerance)
+                lastTolerance = tolerance;
+            lastShouldWaitToStop = shouldWaitToStop;
+            bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+            updateTargetPose(bottomLeftCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
+            bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
+            if (numberOfTargets == 2) {
+                if (targetPose.distanceTo(bottomRightCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
+                    bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(bottomRightCorner);
+                    bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
+                } else {
+                    topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(topLeftCorner);
+                    topLeftCorner.setHeading(0, AngleUnit.RADIANS);
+                }
+            }
+        } else if (minDist == c) {
+            lastTarget = targetPose;
+            if (customTolerance)
+                lastTolerance = tolerance;
+            lastShouldWaitToStop = shouldWaitToStop;
+            topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+            updateTargetPose(topLeftCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
+            topLeftCorner.setHeading(0, AngleUnit.RADIANS);
+            if (numberOfTargets == 2) {
+                if (targetPose.distanceTo(bottomLeftCorner, DistanceUnit.CM) < targetPose.distanceTo(topRightCorner, DistanceUnit.CM)) {
+                    bottomLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(bottomLeftCorner);
+                    bottomLeftCorner.setHeading(0, AngleUnit.RADIANS);
+                } else {
+                    topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(topRightCorner);
+                    topRightCorner.setHeading(0, AngleUnit.RADIANS);
+                }
+            }
+        } else if (minDist == d) {
+            lastTarget = targetPose;
+            if (customTolerance)
+                lastTolerance = tolerance;
+            lastShouldWaitToStop = shouldWaitToStop;
+            topRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+            updateTargetPose(topRightCorner, new Pose(5, 5, DistanceUnit.CM, 5, AngleUnit.DEGREES), false);
+            topRightCorner.setHeading(0, AngleUnit.RADIANS);
+            if (numberOfTargets == 2) {
+                if (targetPose.distanceTo(bottomRightCorner, DistanceUnit.CM) < targetPose.distanceTo(topLeftCorner, DistanceUnit.CM)) {
+                    bottomRightCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(bottomRightCorner);
+                    bottomRightCorner.setHeading(0, AngleUnit.RADIANS);
+                } else {
+                    topLeftCorner.setHeading(targetPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+                    targetPoses.add(topLeftCorner);
+                    topLeftCorner.setHeading(0, AngleUnit.RADIANS);
+                }
+            }
+        }
+        setTargetsList(targetPoses);
+    }
+
+    public int countCornersBeforeDirect(Pose start, Pose target, double clearanceCm) {
+        if (!noGoZone) return 0;
+
+        // Inflate no-go rectangle by clearance (robot radius + margin)
+        double left = topLeftCorner.getX(DistanceUnit.CM) - clearanceCm;
+        double right = bottomRightCorner.getX(DistanceUnit.CM) + clearanceCm;
+        double top = topLeftCorner.getY(DistanceUnit.CM) + clearanceCm;
+        double bottom = bottomRightCorner.getY(DistanceUnit.CM) - clearanceCm;
+
+        // If start/target fall inside inflated rect, push them to nearest outside point (not a corner)
+        Pose s = pointInRect(start, left, right, bottom, top) ? clampToOutside() : start;
+        Pose t = pointInRect(target, left, right, bottom, top) ? clampToOutside() : target;
+
+        // 1 corner needed? Try each expanded corner; if both legs are clear, 1 corner is enough
+        final double EPS = 2; // small nudge to sit just outside the inflated rectangle
+        Pose[] corners = new Pose[]{
+                new Pose(left - EPS, top + EPS, DistanceUnit.CM), // TL
+                new Pose(right + EPS, top + EPS, DistanceUnit.CM), // TR
+                new Pose(right + EPS, bottom - EPS, DistanceUnit.CM), // BR
+                new Pose(left - EPS, bottom - EPS, DistanceUnit.CM)  // BL
+        };
+        for (Pose c : corners) {
+            if (!segmentIntersectsRect(s, c, left, right, bottom, top) &&
+                    !segmentIntersectsRect(c, t, left, right, bottom, top)) {
+                return 1;
+            }
+        }
+
+        // Otherwise, 2 corners (wrapping around one side of the rectangle) will be sufficient
+        return 2;
+    }
+
+    public double getError(DistanceUnit distanceUnit) {
         Pose err = targetPose.add(getCurrentPos());
-        return Math.hypot(err.getX(), err.getY());
+        return Math.hypot(err.getX(distanceUnit), err.getY(distanceUnit));
     }
 
     public double getTrajectoryCount() {
@@ -601,5 +755,61 @@ public class MecanumDrive implements Module {
 
     public Localizer getLocalizerInstance() {
         return localizer;
+    }
+    private static boolean pointInRect(Pose p, double left, double right, double bottom, double top) {
+        double x = p.getX(DistanceUnit.CM), y = p.getY(DistanceUnit.CM);
+        return x > left && x < right && y > bottom && y < top; // strict interior
+    }
+
+    private static Pose clampToOutside() {
+        throw new IllegalArgumentException("Target is inside no go zone");
+    }
+
+    private static boolean segmentIntersectsRect(Pose a, Pose b,
+                                                 double left, double right, double bottom, double top) {
+        // If either endpoint is strictly inside -> intersects
+        if (pointInRect(a, left, right, bottom, top) || pointInRect(b, left, right, bottom, top))
+            return true;
+
+        Pose tl = new Pose(left, top, DistanceUnit.CM);
+        Pose tr = new Pose(right, top, DistanceUnit.CM);
+        Pose br = new Pose(right, bottom, DistanceUnit.CM);
+        Pose bl = new Pose(left, bottom, DistanceUnit.CM);
+
+        return segmentsIntersect(a, b, tl, tr) || // top
+                segmentsIntersect(a, b, tr, br) || // right
+                segmentsIntersect(a, b, br, bl) || // bottom
+                segmentsIntersect(a, b, bl, tl);   // left
+    }
+
+    private static boolean segmentsIntersect(Pose p1, Pose q1, Pose p2, Pose q2) {
+        int o1 = orientation(p1, q1, p2);
+        int o2 = orientation(p1, q1, q2);
+        int o3 = orientation(p2, q2, p1);
+        int o4 = orientation(p2, q2, q1);
+        if (o1 != o2 && o3 != o4) return true;
+        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+        return o4 == 0 && onSegment(p2, q1, q2);
+    }
+
+    private static int orientation(Pose a, Pose b, Pose c) {
+        double val = (b.getY(DistanceUnit.CM) - a.getY(DistanceUnit.CM)) * (c.getX(DistanceUnit.CM) - b.getX(DistanceUnit.CM)) -
+                (b.getX(DistanceUnit.CM) - a.getX(DistanceUnit.CM)) * (c.getY(DistanceUnit.CM) - b.getY(DistanceUnit.CM));
+        if (Math.abs(val) < 1e-12) return 0;
+        return (val > 0) ? 1 : 2;
+    }
+
+    private static boolean onSegment(Pose p, Pose q, Pose r) {
+        double qx = q.getX(DistanceUnit.CM), qy = q.getY(DistanceUnit.CM);
+        return qx >= Math.min(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) - 1e-12 &&
+                qx <= Math.max(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) + 1e-12 &&
+                qy >= Math.min(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) - 1e-12 &&
+                qy <= Math.max(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) + 1e-12;
+    }
+
+    public enum RunMode {
+        PID, MANUAL, Spline, CalibrateSplinePID
     }
 }

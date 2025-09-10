@@ -62,9 +62,9 @@ public class Constants {
 
 
     //GoToPoint Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static double velocityThreshold = 11; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
+    public static double velocityThreshold = 7; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
 
-    public static boolean useFinalAdj = true;
+    public static boolean useFinalAdj = false;
     public static boolean holdFinalPoint = true;
 
     @Config
@@ -123,8 +123,6 @@ public class Constants {
         public static double CentripetalScalingFactor = 0;
         public static boolean shouldBrake = true;
     }
-
-
     public static final double WAIT_TIME_VARIABLE = 99999999.991; //IGNORA
     @Config
     public static class DeviceNames {

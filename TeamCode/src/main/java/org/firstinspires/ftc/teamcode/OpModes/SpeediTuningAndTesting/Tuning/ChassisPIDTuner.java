@@ -6,6 +6,8 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
@@ -19,10 +21,10 @@ public class ChassisPIDTuner extends LinearOpMode {
     }
 
     State state;
-    Pose startPose = new Pose(0, 0, Math.toRadians(0));
+    Pose startPose = new Pose(0, 0, DistanceUnit.CM, Math.toRadians(0), AngleUnit.RADIANS);
 
     public static double xTargetPos = 101, yTargetPos = 15, angleTargetPos = 0;//TODO Change how you want
-    Pose targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
+    Pose targetPos = new Pose(xTargetPos, yTargetPos,DistanceUnit.CM, angleTargetPos, AngleUnit.DEGREES);
     int traj = 0;
 
     @Override
@@ -38,7 +40,7 @@ public class ChassisPIDTuner extends LinearOpMode {
             switch (state) {
                 case DRIVING:
                     if (gamepad1.b) {
-                        targetPos = new Pose(xTargetPos, yTargetPos, Math.toRadians(angleTargetPos));
+                        targetPos = new Pose(xTargetPos, yTargetPos,DistanceUnit.CM, angleTargetPos, AngleUnit.DEGREES);
                         drive.resetPosition(startPose);
                         state = State.AUTO;
                         traj = 0;
@@ -49,14 +51,15 @@ public class ChassisPIDTuner extends LinearOpMode {
                     drive.PinPointErrorTelemetry(false);
                     break;
                 case AUTO:
-                    drive.setTargetPose(targetPos);
+                    targetPos = new Pose(xTargetPos, yTargetPos,DistanceUnit.CM, angleTargetPos, AngleUnit.DEGREES);
+                    drive.setTargetPose(targetPos,true);
                     traj = 0;
                     while (opModeIsActive()) {
                         switch (traj) {
                             case 0:
                                 if (drive.isDone()) {
                                     traj++;
-                                    drive.setTargetPose(startPose);
+                                    drive.setTargetPose(startPose,true);
                                 }
                                 break;
                         }

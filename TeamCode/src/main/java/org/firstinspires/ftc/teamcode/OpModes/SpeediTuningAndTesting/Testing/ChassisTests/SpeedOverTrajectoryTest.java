@@ -24,7 +24,7 @@ public class SpeedOverTrajectoryTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
         spline = new BezierSpline(new CubicBezierCurve(new Vector(0, 0), new Vector(-137, -50), new Vector(-43, 23), new Vector(-169, 23), Math.toRadians(0)));
-        localizer = new PinPointLocalizer(hardwareMap, new Pose(0, 0, 0));
+        localizer = new PinPointLocalizer(hardwareMap, new Pose());
         follower = new SplineFollowing(localizer.getPoseEstimate(), spline, telemetry);
 
         waitForStart();

@@ -17,7 +17,7 @@ public class TestBezier extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         CubicBezierCurve curve = new CubicBezierCurve(new Vector(0, 0), new Vector(14, -172), new Vector(-77, 83), new Vector(-70, -200), 0);
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(0, 0, 0), telemetry, true);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true);
         drive.setSpline_withInstantHeadingChange(curve);
 
         waitForStart();

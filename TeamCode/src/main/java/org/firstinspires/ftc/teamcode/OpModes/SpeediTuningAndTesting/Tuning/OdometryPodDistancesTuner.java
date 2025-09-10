@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
@@ -37,13 +39,13 @@ public class OdometryPodDistancesTuner extends LinearOpMode {
         drive.motors.setMotorPower(0.5, 0.5, -0.5, -0.5);
         timer.reset();
         while (timeToRotate_MS >= timer.milliseconds() || isStopRequested()) {
-            double angle = localizer.getPoseEstimate().getHeading();
+            double angle = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
             double w = 0;
             if (timer.seconds() - lastTime != 0)
                 w = (angle - lastAngle) / (timer.seconds() - lastTime); // rad/s
 
-            rXCoordinates.add(new Pose(w, localizer.odo.getEncoderX() / (timer.seconds() - lastTime)));
-            rYCoordinates.add(new Pose(w, localizer.odo.getEncoderY() / (timer.seconds() - lastTime)));
+            //rXCoordinates.add(new Pose(w, localizer.odo.getEncoderX() / (timer.seconds() - lastTime)));
+           // rYCoordinates.add(new Pose(w, localizer.odo.getEncoderY() / (timer.seconds() - lastTime)));????
 
 
             telemetry.addData("Angular velocity", w);
@@ -70,10 +72,10 @@ public class OdometryPodDistancesTuner extends LinearOpMode {
         // Calculate slopes between all unique pairs of points
         for (int i = 0; i < poses.size(); i++) {
             for (int j = i + 1; j < poses.size(); j++) {
-                double x1 = poses.get(i).getX();
-                double y1 = poses.get(i).getY();
-                double x2 = poses.get(j).getX();
-                double y2 = poses.get(j).getY();
+                double x1 = poses.get(i).getX(DistanceUnit.CM);
+                double y1 = poses.get(i).getY(DistanceUnit.CM);
+                double x2 = poses.get(j).getX(DistanceUnit.CM);
+                double y2 = poses.get(j).getY(DistanceUnit.CM);
 
                 if (x2 != x1) { // Avoid division by zero
                     slopes.add((y2 - y1) / (x2 - x1));

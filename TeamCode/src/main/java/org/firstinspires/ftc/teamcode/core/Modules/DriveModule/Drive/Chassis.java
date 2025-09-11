@@ -54,8 +54,8 @@ public class Chassis implements Module {
             RBM.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             RFM.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
-        LBM.motor.setDirection(DcMotorEx.Direction.REVERSE);
-        LFM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+        RBM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+        RFM.motor.setDirection(DcMotorEx.Direction.REVERSE);
         motors = Arrays.asList(LFM, LBM, RFM, RBM);
 
         Globals.voltage = hardwareMap.voltageSensor.iterator().next().getVoltage();

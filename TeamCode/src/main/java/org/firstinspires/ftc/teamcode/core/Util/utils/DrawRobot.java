@@ -9,7 +9,6 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
@@ -27,6 +26,8 @@ public class DrawRobot {
             drawGoToPoint(pose, drive.getTarget(), "#3F51B5");
         }
         drawPoseHistory(drive.poseTracker, "#4CAF50");
+        if (drive.noGoZone)
+            drawNoGoZone(drive.topLeftCorner, drive.topRightCorner, drive.bottomLeftCorner, drive.bottomRightCorner);
         drawRobot(pose, "#4CAF50");
         sendPacket();
     }
@@ -46,8 +47,8 @@ public class DrawRobot {
 
     public static void drawRobot(Pose pose) {
         drawRobot(pose, "#4CAF50");
-        sendPacket();
     }
+
     public static void drawRobot(Pose pose, String color) {
         if (packet == null) packet = new TelemetryPacket();
 
@@ -79,7 +80,7 @@ public class DrawRobot {
 
     private static void drawRobotOnCanvas(Canvas c, Pose t) {
         t = t.invCoord();
-        t.setY(-t.getY(DistanceUnit.INCH),DistanceUnit.INCH);
+        t.setY(-t.getY(DistanceUnit.INCH), DistanceUnit.INCH);
         final double ROBOT_RADIUS = 9;
 
         c.setStrokeWidth(1);
@@ -91,6 +92,13 @@ public class DrawRobot {
         c.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
     }
 
+    public static void drawNoGoZone(Pose topLeftCorner, Pose topRightCorner, Pose bottomLeftCorner, Pose bottomRightCorner) {
+        if (packet == null) packet = new TelemetryPacket();
+        Canvas c = packet.fieldOverlay();
+        c.setStroke("red");
+        c.setStrokeWidth(1);
+        c.strokePolygon(new double[]{topLeftCorner.getY(DistanceUnit.INCH), topRightCorner.getY(DistanceUnit.INCH), bottomRightCorner.getY(DistanceUnit.INCH), bottomLeftCorner.getY(DistanceUnit.INCH)}, new double[]{-topLeftCorner.getX(DistanceUnit.INCH), -topRightCorner.getX(DistanceUnit.INCH), -bottomRightCorner.getX(DistanceUnit.INCH), -bottomLeftCorner.getX(DistanceUnit.INCH)});
+    }
 
     private static void drawPath(Canvas c, double[][] points) {
         c.strokePolyline(points[0], points[1]);

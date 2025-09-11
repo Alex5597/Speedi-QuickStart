@@ -56,7 +56,7 @@ public class Pose {
     }
 
     public Pose(Pose2D pose) {
-        this(pose.getX(DistanceUnit.CM), pose.getX(DistanceUnit.CM), DistanceUnit.CM, pose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+        this(pose.getX(DistanceUnit.CM), pose.getY(DistanceUnit.CM), DistanceUnit.CM, pose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
     }
 
     public double getX(DistanceUnit distanceUnit) {
@@ -128,7 +128,7 @@ public class Pose {
 
     public void setHeading(double heading, AngleUnit angleUnit) {
         if (Objects.requireNonNull(angleUnit) == AngleUnit.DEGREES) {
-            this.heading = angleWrapper(Math.toRadians(heading));
+            heading = Math.toRadians(heading);
         }
         this.heading = angleWrapper(heading);
     }
@@ -150,7 +150,7 @@ public class Pose {
     }
 
     public String toString() {
-        return "Pose(" + x + "\n" + y + "\n" + Math.toDegrees(heading) + ")";
+        return "Pose(" + x + ", " + y + ", " + Math.toDegrees(heading) + ")";
     }
 
     public Vector toVec() {

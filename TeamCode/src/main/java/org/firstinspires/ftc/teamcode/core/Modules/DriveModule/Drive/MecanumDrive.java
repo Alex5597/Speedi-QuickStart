@@ -65,9 +65,9 @@ public class MecanumDrive implements Module {
     Pose tolerance = new Pose(), lastTolerance = new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS);
     double noGoZoneTolerance = 0;
     boolean shouldWaitToStop = false, lastShouldWaitToStop = false;
-    boolean noGoZone = false, willEnterNoGoZone = false, goingToNewTargetForAvoidingNoGoZone = false;
-    Pose topLeftCorner = new Pose(), topRightCorner = new Pose(), bottomLeftCorner = new Pose(), bottomRightCorner = new Pose();
-    private final Pose lastTarget = new Pose();
+    public boolean noGoZone = false, willEnterNoGoZone = false, goingToNewTargetForAvoidingNoGoZone = false;
+    public Pose topLeftCorner = new Pose(), topRightCorner = new Pose(), bottomLeftCorner = new Pose(), bottomRightCorner = new Pose();
+    private Pose lastTarget = new Pose();
     private Pose targetPose = new Pose();
     private Vector speedVector = new Vector(0, 0, 0);
     private int n;
@@ -202,9 +202,8 @@ public class MecanumDrive implements Module {
 
         tPid.reset();
         hPid.reset();
-        if (noGoZone) {
-            checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
-            if (willEnterNoGoZone) {
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance)) {
                 recalibrateTargetToAvoidNoGoZone();
             }
         }
@@ -231,9 +230,8 @@ public class MecanumDrive implements Module {
 
         tPid.reset();
         hPid.reset();
-        if (noGoZone) {
-            checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
-            if (willEnterNoGoZone) {
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance)) {
                 recalibrateTargetToAvoidNoGoZone();
             }
         }
@@ -252,9 +250,8 @@ public class MecanumDrive implements Module {
         timerSinceStart.reset();
         this.tolerance = tolerance;
         timerResetedFailsafe = false;
-        if (noGoZone) {
-            checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
-            if (willEnterNoGoZone) {
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance)) {
                 recalibrateTargetToAvoidNoGoZone();
             }
         }
@@ -272,15 +269,15 @@ public class MecanumDrive implements Module {
         robotIsStuck = false;
         timerSinceStart.reset();
         timerResetedFailsafe = false;
-        if (noGoZone) {
-            checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
-            if (willEnterNoGoZone) {
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance)) {
                 recalibrateTargetToAvoidNoGoZone();
             }
         }
     }
 
     public void setTargetsList(Queue<Pose> targetPositions) {
+        this.targetPositions.clear();
         this.runMode = RunMode.PID;
         this.targetPositions = targetPositions;
         this.shouldWaitToStop = false;
@@ -343,13 +340,13 @@ public class MecanumDrive implements Module {
                     }
                 }
                 if (goingToNewTargetForAvoidingNoGoZone && trajectoryDone) {
-                    goingToNewTargetForAvoidingNoGoZone = false;
-                    willEnterNoGoZone = false;
-                    noGoZone = true;
                     if (!lastTolerance.equals(new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS)))
                         updateTargetPose(lastTarget, lastTolerance, lastShouldWaitToStop);
                     else updateTargetPose(lastTarget, lastShouldWaitToStop);
                     lastTolerance = new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS);
+                    goingToNewTargetForAvoidingNoGoZone = false;
+                    willEnterNoGoZone = false;
+                    noGoZone = true;
                 }
 
                 if (!trajectoryDone) {
@@ -520,6 +517,13 @@ public class MecanumDrive implements Module {
         if (!updated) telemetry.update();
     }
 
+    public void noGoZoneTelemetry(boolean updated) {
+        telemetry.addData("target positions", targetPositions);
+        telemetry.addData("number of targets", n);
+        telemetry.addData("will avoid zone", goingToNewTargetForAvoidingNoGoZone);
+        if (!updated) telemetry.update();
+    }
+
     public void targetTelemetry(boolean updated) {
         if (targetPose.getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
             telemetry.addData("Target", targetPose.toString());
@@ -585,8 +589,8 @@ public class MecanumDrive implements Module {
         hPid.reset();
     }
 
-    public void setNoGoZone(Pose topLeftCorner, Pose bottomRightCorner, double noGoTolerance) {
-        this.noGoZoneTolerance = noGoTolerance;
+    public void setNoGoZone(Pose topLeftCorner, Pose bottomRightCorner, double noGoToleranceInCm) {
+        this.noGoZoneTolerance = noGoToleranceInCm;
         this.topLeftCorner = topLeftCorner;
         this.topRightCorner = new Pose(bottomRightCorner.getX(DistanceUnit.CM), topLeftCorner.getY(DistanceUnit.CM), DistanceUnit.CM);
         this.bottomRightCorner = bottomRightCorner;
@@ -606,40 +610,24 @@ public class MecanumDrive implements Module {
         willEnterNoGoZone = false;
     }
 
-    private boolean isInsideNoGoZone(Pose p) {
-        double x = p.getX(DistanceUnit.CM);
-        double y = p.getY(DistanceUnit.CM);
-
-        double left = topLeftCorner.getX(DistanceUnit.CM);
-        double right = bottomRightCorner.getX(DistanceUnit.CM);
-        double top = topLeftCorner.getY(DistanceUnit.CM);
-        double bottom = bottomRightCorner.getY(DistanceUnit.CM);
-
-        return x >= left - noGoZoneTolerance && x <= right + noGoZoneTolerance && y >= bottom - noGoZoneTolerance && y <= top + noGoZoneTolerance;
+    public boolean checkIfInsideNoGoZone(Pose startPose, Pose targetPose, double clearanceCm) {
+        this.noGoZoneTolerance = clearanceCm;
+        return segmentIntersectsRect(startPose, targetPose);
     }
 
-    public void checkIfInsideNoGoZone(Pose startPose, Pose targetPose, double clearanceCm) {
-        double left = topLeftCorner.getX(DistanceUnit.CM) - clearanceCm;
-        double right = bottomRightCorner.getX(DistanceUnit.CM) + clearanceCm;
-        double top = topLeftCorner.getY(DistanceUnit.CM) + clearanceCm;
-        double bottom = bottomRightCorner.getY(DistanceUnit.CM) - clearanceCm;
-        if (segmentIntersectsRect(startPose, targetPose, left, right, bottom, top)) {
-            willEnterNoGoZone = true;
-        }
-    }
 
     public void recalibrateTargetToAvoidNoGoZone() {
         willEnterNoGoZone = false;
-        noGoZone = false;
         goingToNewTargetForAvoidingNoGoZone = true;
+        lastTarget = targetPose;
+        if (customTolerance)
+            lastTolerance = tolerance;
+        lastShouldWaitToStop = shouldWaitToStop;
         Queue<Pose> targetPoses = findBestCorners(localizer.getPoseEstimate(), targetPose, noGoZoneTolerance);
         setTargetsList(targetPoses);
     }
 
     public Queue<Pose> findBestCorners(Pose start, Pose target, double clearanceCm) {
-        willEnterNoGoZone = false;
-        noGoZone = false;
-        goingToNewTargetForAvoidingNoGoZone = true;
         // Inflate no-go rectangle by clearance (robot radius + margin)
         double left = topLeftCorner.getX(DistanceUnit.CM) - clearanceCm;
         double right = bottomRightCorner.getX(DistanceUnit.CM) + clearanceCm;
@@ -650,47 +638,62 @@ public class MecanumDrive implements Module {
         Pose s = pointInRect(start, left, right, bottom, top) ? clampToOutside() : start;
         Pose t = pointInRect(target, left, right, bottom, top) ? clampToOutside() : target;
 
-        final double EPS = 2; // small nudge to sit just outside the inflated rectangle
-        Pose[] corners = new Pose[]{new Pose(left - EPS, top + EPS, DistanceUnit.CM), // TL
-                new Pose(right + EPS, top + EPS, DistanceUnit.CM), // TR
-                new Pose(right + EPS, bottom - EPS, DistanceUnit.CM), // BR
-                new Pose(left - EPS, bottom - EPS, DistanceUnit.CM)  // BL
+        Pose[] corners = new Pose[]{
+                topLeftCorner, // TL
+                topRightCorner, // TR
+                bottomRightCorner, // BR
+                bottomLeftCorner  // BL
         };
-        Pose bestCorner = new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS);
+        Pose bestCorner = new Pose();
         double minDist = Double.MAX_VALUE;
         for (Pose c : corners) {
-            if (!segmentIntersectsRect(s, c, left, right, bottom, top) && !segmentIntersectsRect(c, t, left, right, bottom, top)) {
+            if (!segmentIntersectsRect(s, c) && !segmentIntersectsRect(c, t)) {
                 if (minDist > c.distanceTo(s, DistanceUnit.CM)) {
                     minDist = c.distanceTo(s, DistanceUnit.CM);
                     bestCorner = c;
                 }
             }
         }
-        if (!bestCorner.equals(new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM, WAIT_TIME_VARIABLE, AngleUnit.RADIANS))) {
+        if (minDist != Double.MAX_VALUE) {
             Queue<Pose> poses = new LinkedList<>();
             poses.add(bestCorner);
             return poses;
         }
-        double a = bottomRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double b = bottomLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double c = topLeftCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        double d = topRightCorner.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        double a = bottomRightCorner.distanceTo(targetPose, DistanceUnit.CM);
+        double b = bottomLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
+        double c = topLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
+        double d = topRightCorner.distanceTo(targetPose, DistanceUnit.CM);
 
         minDist = Math.min(Math.min(Math.min(a, b), c), d);
-        if (minDist == a) bestCorner = bottomRightCorner;
-        else if (minDist == b) bestCorner = bottomLeftCorner;
-        else if (minDist == c) bestCorner = topLeftCorner;
-        else bestCorner = topRightCorner;
+        if (minDist == a)
+            bestCorner = bottomRightCorner;
+        else if (minDist == b)
+            bestCorner = bottomLeftCorner;
+        else if (minDist == c)
+            bestCorner = topLeftCorner;
+        else
+            bestCorner = topRightCorner;
         Queue<Pose> bestCorners = new LinkedList<>();
-        bestCorners.add(bestCorner);
+
         for (Pose corner : corners) {
-            if (!segmentIntersectsRect(bestCorner, corner, left, right, bottom, top) && !segmentIntersectsRect(corner, t, left, right, bottom, top)) {
+            if (bestCorner != corner && areAdjacentAxisAligned(corner, bestCorner) && !segmentIntersectsRect(corner, s)) {
                 bestCorners.add(corner);
-                return bestCorners;
+                break;
             }
         }
-        return null;
+        bestCorners.add(bestCorner);
+        return bestCorners;
     }
+
+    private static final double EPS = 1e-10;
+
+    public boolean areAdjacentAxisAligned(Pose a, Pose b) {
+        double ax = a.getX(DistanceUnit.CM), ay = a.getY(DistanceUnit.CM);
+        double bx = b.getX(DistanceUnit.CM), by = b.getY(DistanceUnit.CM);
+
+        return (ax == bx) || (ay == by); // exactly one coordinate matches
+    }
+
 
     public double getError(DistanceUnit distanceUnit) {
         Pose err = targetPose.add(getCurrentPos());
@@ -720,20 +723,13 @@ public class MecanumDrive implements Module {
         throw new IllegalArgumentException("Target is inside no go zone");
     }
 
-    private static boolean segmentIntersectsRect(Pose a, Pose b, double left, double right, double bottom, double top) {
-        // If either endpoint is strictly inside -> intersects
-        if (pointInRect(a, left, right, bottom, top) || pointInRect(b, left, right, bottom, top))
-            return true;
+    Pose eps = new Pose(0.1, -0.1, DistanceUnit.CM);
 
-        Pose tl = new Pose(left, top, DistanceUnit.CM);
-        Pose tr = new Pose(right, top, DistanceUnit.CM);
-        Pose br = new Pose(right, bottom, DistanceUnit.CM);
-        Pose bl = new Pose(left, bottom, DistanceUnit.CM);
-
-        return segmentsIntersect(a, b, tl, tr) || // top
-                segmentsIntersect(a, b, tr, br) || // right
-                segmentsIntersect(a, b, br, bl) || // bottom
-                segmentsIntersect(a, b, bl, tl);   // left
+    private boolean segmentIntersectsRect(Pose a, Pose b) {
+        return segmentsIntersect(a, b, topLeftCorner.subtract(eps), topRightCorner.add(eps)) || // top
+                segmentsIntersect(a, b, topRightCorner.add(eps), bottomRightCorner.add(new Pose(-0.1, 0.1, DistanceUnit.CM))) || // right
+                segmentsIntersect(a, b, bottomRightCorner.add(new Pose(-0.1, 0.1, DistanceUnit.CM)), bottomLeftCorner.subtract(new Pose(-0.1, 0.1, DistanceUnit.CM))) || // bottom
+                segmentsIntersect(a, b, bottomLeftCorner.subtract(new Pose(-0.1, 0.1, DistanceUnit.CM)), topLeftCorner.subtract(eps));   // left
     }
 
     private static boolean segmentsIntersect(Pose p1, Pose q1, Pose p2, Pose q2) {
@@ -741,23 +737,43 @@ public class MecanumDrive implements Module {
         int o2 = orientation(p1, q1, q2);
         int o3 = orientation(p2, q2, p1);
         int o4 = orientation(p2, q2, q1);
-        if (o1 != o2 && o3 != o4) return true;
-        if (o1 == 0 && onSegment(p1, p2, q1)) return true;
-        if (o2 == 0 && onSegment(p1, q2, q1)) return true;
-        if (o3 == 0 && onSegment(p2, p1, q2)) return true;
-        return o4 == 0 && onSegment(p2, q1, q2);
+
+        // Proper intersection: strict opposite orientations
+        if (o1 * o2 < 0 && o3 * o4 < 0) return true;
+
+        // Collinear/endpoint-touch cases (inclusive)
+        //  if (o1 == 0 && onSegment(p1, p2, q1)) return true; // p2 on p1-q1
+        //  if (o2 == 0 && onSegment(p1, q2, q1)) return true; // q2 on p1-q1
+        //  if (o3 == 0 && onSegment(p2, p1, q2)) return true; // p1 on p2-q2
+        //  return o4 == 0 && onSegment(p2, q1, q2); // q1 on p2-q2
+        return false;
     }
 
     private static int orientation(Pose a, Pose b, Pose c) {
-        double val = (b.getY(DistanceUnit.CM) - a.getY(DistanceUnit.CM)) * (c.getX(DistanceUnit.CM) - b.getX(DistanceUnit.CM)) - (b.getX(DistanceUnit.CM) - a.getX(DistanceUnit.CM)) * (c.getY(DistanceUnit.CM) - b.getY(DistanceUnit.CM));
-        if (Math.abs(val) < 1e-12) return 0;
-        return (val > 0) ? 1 : 2;
+        double ax = a.getX(DistanceUnit.CM), ay = a.getY(DistanceUnit.CM);
+        double bx = b.getX(DistanceUnit.CM), by = b.getY(DistanceUnit.CM);
+        double cx = c.getX(DistanceUnit.CM), cy = c.getY(DistanceUnit.CM);
+
+        // cross( b - a, c - a )
+        double val = (by - ay) * (cx - ax) - (bx - ax) * (cy - ay);
+        if (Math.abs(val) <= EPS) return 0;
+        return val > 0 ? +1 : -1;  // +1: CCW, -1: CW
     }
 
     private static boolean onSegment(Pose p, Pose q, Pose r) {
+        double px = p.getX(DistanceUnit.CM), py = p.getY(DistanceUnit.CM);
         double qx = q.getX(DistanceUnit.CM), qy = q.getY(DistanceUnit.CM);
-        return qx >= Math.min(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) - 1e-12 && qx <= Math.max(p.getX(DistanceUnit.CM), r.getX(DistanceUnit.CM)) + 1e-12 && qy >= Math.min(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) - 1e-12 && qy <= Math.max(p.getY(DistanceUnit.CM), r.getY(DistanceUnit.CM)) + 1e-12;
+        double rx = r.getX(DistanceUnit.CM), ry = r.getY(DistanceUnit.CM);
+
+        // inclusive bounding box with tolerance
+        boolean withinBox = qx >= Math.min(px, rx) - EPS && qx <= Math.max(px, rx) + EPS
+                && qy >= Math.min(py, ry) - EPS && qy <= Math.max(py, ry) + EPS;
+
+        // keep robust: ensure (approximately) collinear as well
+        double cross = (rx - px) * (qy - py) - (ry - py) * (qx - px);
+        return withinBox && Math.abs(cross) <= EPS;
     }
+
 
     private double angleWrapper(double angle) {
         angle %= (2.0 * Math.PI);

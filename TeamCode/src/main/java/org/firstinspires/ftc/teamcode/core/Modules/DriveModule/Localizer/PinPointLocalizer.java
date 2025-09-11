@@ -40,7 +40,7 @@ public class PinPointLocalizer implements Localizer {
 
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL
 
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);
@@ -62,7 +62,7 @@ public class PinPointLocalizer implements Localizer {
 
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL IN MM
 
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO;
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO;
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);
@@ -92,7 +92,6 @@ public class PinPointLocalizer implements Localizer {
         }
         odo.update();
 
-        double angle = angleWrapper(odo.getHeading());
         Pose2D pose = odo.getPosition();
         currentPosition = new Pose(pose).rotateFieldCoordinate(-Math.PI / 2);
         Vector velocity = velocityAdapter.getVelocity(currentPosition);
@@ -116,7 +115,7 @@ public class PinPointLocalizer implements Localizer {
                     Math.signum(lastVelocityVector.getX()) * lastVelocityVector.getX() * lastVelocityVector.getX() / (2.0 * xDeceleration),
                     Math.signum(lastVelocityVector.getY()) * lastVelocityVector.getY() * lastVelocityVector.getY() / (2.0 * yDeceleration),
                     0);
-        if(!velocityVectorRaw.isNaN())
+        if (!velocityVectorRaw.isNaN())
             lastVelocityVector = velocityVectorRaw;
     }
 
@@ -160,7 +159,7 @@ public class PinPointLocalizer implements Localizer {
     public void updateOnlyImu() {
         odo.update(GoBildaPinpointDriver.readData.ONLY_UPDATE_HEADING);
         double angle = angleWrapper(odo.getHeading());
-        currentPosition = new Pose(0, 0,DistanceUnit.CM, angle, AngleUnit.RADIANS);
+        currentPosition = new Pose(0, 0, DistanceUnit.CM, angle, AngleUnit.RADIANS);
     }
 
     @Override

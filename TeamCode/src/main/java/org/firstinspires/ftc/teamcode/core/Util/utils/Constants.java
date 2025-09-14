@@ -43,6 +43,9 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 @Config
 public class Constants {
     public static boolean useDashboard = true;
+
+    public static double robotWidthInCMs = 10;//LEFT TO RIGHT DISTANCE(positive always)
+    public static double robotLengthInCMs = 10;//FRONT TO BACK DISTANCE(positive always)
     //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
     public static final double cmPerTickForward = 1.00 / (19.89436789f / 10);
     public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);

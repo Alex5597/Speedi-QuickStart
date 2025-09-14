@@ -15,9 +15,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
-import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SquidController;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
@@ -28,7 +26,7 @@ public class SplineFollowing {
     public static PIDController tPid = new PIDController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
     public static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
     Telemetry telemetry;
-    double lastT = 0;
+    double lastT = 0, currentT = 0;
     Vector finalPoint;
     boolean goToPoint, instantHeading;
     double tLerp = 0;
@@ -107,12 +105,12 @@ public class SplineFollowing {
         hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
 
         // Finding closest point
-        double currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT);
+        currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT);
         lastT = currentT;
         Vector currTargetPoint = trajectory.calculate(currentT + 1.0 / resolution);
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT + 1.0 / resolution));
         if (tangential)
-            targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution),AngleUnit.RADIANS);
+            targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution), AngleUnit.RADIANS);
         else if (!instantHeading)
             targetPose.setHeading(hlerp(robotPose.getHeading(AngleUnit.RADIANS), trajectory.heading(currentT + 1.0 / resolution), tLerp), AngleUnit.RADIANS);
 
@@ -176,5 +174,9 @@ public class SplineFollowing {
             }
         }
         return a + t * diff;
+    }
+
+    public double percentageOfTrajectoryThatIsDone() {
+        return currentT * 100;
     }
 }

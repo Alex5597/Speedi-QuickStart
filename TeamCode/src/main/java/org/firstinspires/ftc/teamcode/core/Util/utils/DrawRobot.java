@@ -26,8 +26,15 @@ public class DrawRobot {
             drawGoToPoint(pose, drive.getTarget(), "#3F51B5");
         }
         drawPoseHistory(drive.poseTracker, "#4CAF50");
-        if (drive.noGoZone)
-            drawNoGoZone(drive.topLeftCorner, drive.topRightCorner, drive.bottomLeftCorner, drive.bottomRightCorner);
+        if (drive.noGoZone) {
+            Pose t = drive.getLastTarget();
+            if (!t.equals(new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM))) {
+                packet.fieldOverlay().setStrokeWidth(1);
+                packet.fieldOverlay().setStroke("#3F51B5");
+                packet.fieldOverlay().strokeCircle(t.getY(DistanceUnit.INCH), -t.getX(DistanceUnit.INCH), 1);
+                drawNoGoZone(drive.topLeftCorner, drive.topRightCorner, drive.bottomLeftCorner, drive.bottomRightCorner);
+            }
+        }
         drawRobot(pose, "#4CAF50");
         sendPacket();
     }

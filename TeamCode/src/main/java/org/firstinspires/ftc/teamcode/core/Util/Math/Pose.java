@@ -146,6 +146,7 @@ public class Pose {
     }
 
     public double distanceTo(Pose other, DistanceUnit distanceUnit) {
+        if (other == null) return 0;
         return Math.hypot(other.getX(distanceUnit) - this.getX(distanceUnit), other.getY(distanceUnit) - this.getY(distanceUnit));
     }
 

@@ -167,7 +167,11 @@ public class Pose {
     }
 
     public Pose rotateFieldCoordinate(double angle) {
-        return new Pose(Math.cos(angle) * x + Math.sin(angle) * y, Math.cos(angle) * y - Math.sin(angle) * x, DistanceUnit.CM, heading, AngleUnit.RADIANS);
+        return new Pose(
+                Math.cos(angle) * x + Math.sin(angle) * y,
+                -Math.sin(angle) * x + Math.cos(angle) * y,
+                DistanceUnit.CM,
+                heading, AngleUnit.RADIANS);
     }
 
     public boolean isNaN() {

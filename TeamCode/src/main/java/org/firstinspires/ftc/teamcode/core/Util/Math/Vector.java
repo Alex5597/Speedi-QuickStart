@@ -30,6 +30,12 @@ public class Vector {
         magnitude = Math.hypot(x, y);
     }
 
+    public Vector(Pose vec) {
+        this.x = vec.getX(CM);
+        this.y = vec.getY(CM);
+        this.heading = vec.getHeading(RADIANS);
+        magnitude = Math.hypot(x, y);
+    }
     public static Vector polar(double r, double t) {
         if (r < 0) {
             r = -r;

@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.core.Util.utils;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotLengthInCMs;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotWidthInCMs;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
@@ -88,6 +90,7 @@ public class DrawRobot {
     private static void drawRobotOnCanvas(Canvas c, Pose t) {
         t = t.invCoord();
         t.setY(-t.getY(DistanceUnit.INCH), DistanceUnit.INCH);
+
         final double ROBOT_RADIUS = 9;
 
         c.setStrokeWidth(1);

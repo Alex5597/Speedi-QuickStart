@@ -313,7 +313,7 @@ public class MecanumDrive implements Module {
      * @param shouldWaitToStopCompletelyAtTheEndOfTrajectory either the robot should stop completely or not at the end of the strafe
      */
     public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
-        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
+        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(-getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
     }
 
     public boolean stopped() {
@@ -767,9 +767,9 @@ public class MecanumDrive implements Module {
 
     private boolean segmentIntersectsRect(Pose a, Pose b) {
         return segmentsIntersect(a, b, topLeftCorner.subtract(eps), topRightCorner.add(eps)) || // top
-                segmentsIntersect(a, b, topRightCorner.add(eps), bottomRightCorner.add(new Pose(-0.1, 0.1, DistanceUnit.CM))) || // right
-                segmentsIntersect(a, b, bottomRightCorner.add(new Pose(-0.1, 0.1, DistanceUnit.CM)), bottomLeftCorner.subtract(new Pose(-0.1, 0.1, DistanceUnit.CM))) || // bottom
-                segmentsIntersect(a, b, bottomLeftCorner.subtract(new Pose(-0.1, 0.1, DistanceUnit.CM)), topLeftCorner.subtract(eps));   // left
+                segmentsIntersect(a, b, topRightCorner.add(eps), bottomRightCorner.subtract(eps)) || // right
+                segmentsIntersect(a, b, bottomRightCorner.subtract(eps), bottomLeftCorner.add(eps)) || // bottom
+                segmentsIntersect(a, b, bottomLeftCorner.add(eps), topLeftCorner.subtract(eps));   // left
     }
 
     private static boolean segmentsIntersect(Pose p1, Pose q1, Pose p2, Pose q2) {
@@ -783,12 +783,12 @@ public class MecanumDrive implements Module {
     }
 
     private static int orientation(Pose a, Pose b, Pose c) {
-        double ax = a.getX(DistanceUnit.CM), ay = a.getY(DistanceUnit.CM);
-        double bx = b.getX(DistanceUnit.CM), by = b.getY(DistanceUnit.CM);
-        double cx = c.getX(DistanceUnit.CM), cy = c.getY(DistanceUnit.CM);
+        Vector aVec = new Vector(a);
+        Vector bVec = new Vector(b);
+        Vector cVec = new Vector(c);
 
         // cross( b - a, c - a )
-        double val = (by - ay) * (cx - ax) - (bx - ax) * (cy - ay);
+        double val = Vector.crossProduct(bVec.subtract(aVec), cVec.subtract(aVec));
         if (Math.abs(val) <= EPS) return 0;
         return val > 0 ? +1 : -1;  // +1: CCW, -1: CW
     }

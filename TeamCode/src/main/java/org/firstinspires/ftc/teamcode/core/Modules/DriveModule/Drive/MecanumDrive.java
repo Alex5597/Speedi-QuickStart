@@ -667,6 +667,8 @@ public class MecanumDrive implements Module {
                 bottomRightCorner.add(new Pose(robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM)), // BR
                 bottomLeftCorner.add(new Pose(-robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM))  // BL
         };
+        if (!(isPoseInsideTheField(cornersWithTolerance[0]) && isPoseInsideTheField(cornersWithTolerance[1]) && isPoseInsideTheField(cornersWithTolerance[2]) && isPoseInsideTheField(cornersWithTolerance[3])))
+            throw new IllegalArgumentException("No go zone and robot width and length will lead to robot going outside of field coordinates");
         Pose bestCorner = new Pose();
         double minDist = Double.MAX_VALUE;
         for (int i = 0; i < 4; i++) {
@@ -687,7 +689,8 @@ public class MecanumDrive implements Module {
         double b = bottomLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
         double c = topLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
         double d = topRightCorner.distanceTo(targetPose, DistanceUnit.CM);
-        Pose bestCornerWithTolerance = new Pose();
+        Pose bestCornerWithTolerance;
+
         minDist = Math.min(Math.min(Math.min(a, b), c), d);
         if (minDist == a) {
             bestCornerWithTolerance = cornersWithTolerance[2];
@@ -809,6 +812,11 @@ public class MecanumDrive implements Module {
 
     public Localizer getLocalizerInstance() {
         return localizer;
+    }
+
+    public boolean isPoseInsideTheField(Pose target) {
+        return target.getX(DistanceUnit.CM) >= -366 && target.getX(DistanceUnit.CM) <= 366 &&
+                target.getY(DistanceUnit.CM) >= -366 && target.getY(DistanceUnit.CM) <= 366;
     }
 
     public enum RunMode {

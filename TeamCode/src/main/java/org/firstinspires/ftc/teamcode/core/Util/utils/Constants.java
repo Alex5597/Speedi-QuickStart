@@ -58,7 +58,7 @@ public class Constants {
     public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm
     public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
 
-    public static boolean shouldUsePhysicalBraking = true;
+    public static boolean shouldUsePhysicalBraking = true;//TODO IF THIS IS TRUE DO NOT ADD kD TO THE tPIDCoeff_GoToPoint AND ADJUST xDeceleration and yDeceleration INSTEAD
     public static double xDeceleration = 247.58438571923446, yDeceleration =  270.13739836707487; //Deceleration for velocity-based stopping
 
     //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑

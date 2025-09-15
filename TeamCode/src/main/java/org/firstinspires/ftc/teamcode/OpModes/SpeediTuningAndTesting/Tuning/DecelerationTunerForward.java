@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
 @Config
@@ -20,7 +20,7 @@ public class DecelerationTunerForward extends LinearOpMode {
 
     FtcDashboard dash;
 
-    GoToPoint drive;
+    SpeediDrive drive;
     ElapsedTime timer = new ElapsedTime();
 
     public static double accelerationTime = 900;//MS
@@ -37,8 +37,8 @@ public class DecelerationTunerForward extends LinearOpMode {
         dash = FtcDashboard.getInstance();
 
         telemetry = new MultipleTelemetry(telemetry, dash.getTelemetry());
-        drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true);
-        drive.setRunMode(GoToPoint.RunMode.MANUAL);
+        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true);
+        drive.setRunMode(SpeediDrive.RunMode.MANUAL);
         waitForStart();
 
         timer.reset();

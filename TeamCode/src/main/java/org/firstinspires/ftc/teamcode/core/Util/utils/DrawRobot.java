@@ -8,7 +8,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
@@ -17,12 +17,12 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 public class DrawRobot {
     private static TelemetryPacket packet;
 
-    public static void drawDebug(GoToPoint drive) {
+    public static void drawDebug(SpeediDrive drive) {
         Pose pose = drive.getLocalizerInstance().getPoseEstimate();
-        if (drive.getRunMode() == GoToPoint.RunMode.Spline) {
+        if (drive.getRunMode() == SpeediDrive.RunMode.Spline) {
             Spline spline = drive.curve;
             drawPath(spline, "#3F51B5");
-        } else if (drive.getRunMode() == GoToPoint.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
+        } else if (drive.getRunMode() == SpeediDrive.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
             drawGoToPoint(pose, drive.getTarget(), "#3F51B5");
         }
         drawPoseHistory(drive.poseTracker, "#4CAF50");

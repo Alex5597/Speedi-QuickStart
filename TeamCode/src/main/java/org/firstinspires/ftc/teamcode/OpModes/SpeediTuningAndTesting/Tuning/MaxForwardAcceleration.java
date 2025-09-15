@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
 import java.util.ArrayDeque;
@@ -26,7 +26,7 @@ public class MaxForwardAcceleration extends LinearOpMode {
     public static int samplePeriodMs = 20;           // ~50 Hz sampling
     public static int fitWindow = 20;                // samples used for slope (~0.4 s)
 
-    GoToPoint drive;
+    SpeediDrive drive;
     double maxAccel = 0.0;
 
     private static class Sample {
@@ -39,7 +39,7 @@ public class MaxForwardAcceleration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true, true);
+        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true, true);
 
         telemetry.addLine("MaxForwardAcceleration: place robot on a long, straight, grippy lane.");
         telemetry.update();

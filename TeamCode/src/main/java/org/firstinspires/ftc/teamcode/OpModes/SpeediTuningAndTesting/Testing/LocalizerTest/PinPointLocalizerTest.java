@@ -5,7 +5,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
@@ -13,13 +13,13 @@ import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 @TeleOp
 public class PinPointLocalizerTest extends LinearOpMode {
     PinPointLocalizer localizer;
-    GoToPoint drive;
+    SpeediDrive drive;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         localizer = new PinPointLocalizer(hardwareMap, new Pose());
-        drive = new GoToPoint(hardwareMap, new Pose(), telemetry, false);
+        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, false);
 
         waitForStart();
 

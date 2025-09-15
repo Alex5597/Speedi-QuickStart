@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive;
+package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Chassis;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.leftBackMotorName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.leftFrontMotorName;
@@ -27,7 +27,7 @@ import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
 import java.util.Arrays;
 import java.util.List;
 
-public class Chassis implements Module {
+public class MecanumChassis implements Module {
     public CoolMotor LFM, RFM, RBM, LBM;
     public List<CoolMotor> motors;
     ElapsedTime voltageTimer = new ElapsedTime();
@@ -44,7 +44,7 @@ public class Chassis implements Module {
             Vector.polar(copiedFrontLeftVector.getMagnitude(), copiedFrontLeftVector.getRelativeHeading())
     };
 
-    public Chassis(HardwareMap hardwareMap, boolean brake) {
+    public MecanumChassis(HardwareMap hardwareMap, boolean brake) {
         this.brake = brake;
         this.hardwareMap = hardwareMap;
         LFM = new CoolMotor(hardwareMap.get(DcMotorEx.class, leftFrontMotorName), "left front motor");

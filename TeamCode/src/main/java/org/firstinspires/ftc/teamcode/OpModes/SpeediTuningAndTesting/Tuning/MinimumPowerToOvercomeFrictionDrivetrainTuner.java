@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
 
@@ -20,8 +20,8 @@ public class MinimumPowerToOvercomeFrictionDrivetrainTuner extends LinearOpMode 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        GoToPoint drive = new GoToPoint(hardwareMap, new Pose(), telemetry,true);
-        drive.setRunMode(GoToPoint.RunMode.MANUAL);
+        SpeediDrive drive = new SpeediDrive(hardwareMap, new Pose(), telemetry,true);
+        drive.setRunMode(SpeediDrive.RunMode.MANUAL);
         double[] minPowersToOvercomeFriction = new double[4];
 
         Pose robotPose;

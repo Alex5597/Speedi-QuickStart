@@ -5,7 +5,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
@@ -32,7 +32,7 @@ public class TestSpline extends LinearOpMode {
 
         // DrawRobot.drawPath(spline1, "#3F51B5");
 
-        GoToPoint drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true);
+        SpeediDrive drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {

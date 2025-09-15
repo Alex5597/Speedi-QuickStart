@@ -8,14 +8,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
 @TeleOp
 public class SplinePIDTuner extends LinearOpMode {
-    GoToPoint drive;
+    SpeediDrive drive;
 
     enum State {
         DRIVING,
@@ -32,7 +32,7 @@ public class SplinePIDTuner extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new GoToPoint(hardwareMap, startPose, telemetry, true);
+        drive = new SpeediDrive(hardwareMap, startPose, telemetry, true);
         state = State.AUTO;
 
         waitForStart();
@@ -53,12 +53,12 @@ public class SplinePIDTuner extends LinearOpMode {
                 case AUTO:
                     drive.setTargetPose(targetPos,true);
                     Constants.GoToPointConstants.holdFinalPoint = true;
-                    drive.setRunMode(GoToPoint.RunMode.CalibrateSplinePID);
+                    drive.setRunMode(SpeediDrive.RunMode.CalibrateSplinePID);
                     while (opModeIsActive()) {
                         drive.update();
                         if (gamepad1.a) {
                             state = State.DRIVING;
-                            drive.setRunMode(GoToPoint.RunMode.MANUAL);
+                            drive.setRunMode(SpeediDrive.RunMode.MANUAL);
                             drive.stop();
                             break;
                         }

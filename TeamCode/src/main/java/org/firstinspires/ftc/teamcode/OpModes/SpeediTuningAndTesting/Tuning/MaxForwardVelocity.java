@@ -6,23 +6,23 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
 @TeleOp
 @Config
 public class MaxForwardVelocity extends LinearOpMode {
-    GoToPoint drive;
+    SpeediDrive drive;
     public  static double accelerationTime = 1300;//MS
     double maxVelocity = -1;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true, true);
+        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true, true);
         telemetry.addData("Velocity", drive.localizer.getVelocity().getY());
         telemetry.update();
-        drive.setRunMode(GoToPoint.RunMode.MANUAL);
+        drive.setRunMode(SpeediDrive.RunMode.MANUAL);
         waitForStart();
 
         drive.motors.setMotorPower(1, 1, 1, 1);

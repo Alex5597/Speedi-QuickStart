@@ -5,17 +5,17 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 
 @TeleOp
 public class SWITCH_FROM_STATIC_TO_KINETIC_FRICTIONTuner extends LinearOpMode {
-    GoToPoint drive;
+    SpeediDrive drive;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new GoToPoint(hardwareMap, telemetry, true);
-        drive.setRunMode(GoToPoint.RunMode.MANUAL);
+        drive = new SpeediDrive(hardwareMap, telemetry, true);
+        drive.setRunMode(SpeediDrive.RunMode.MANUAL);
         waitForStart();
 
         drive.motors.goAtMinimumPower();

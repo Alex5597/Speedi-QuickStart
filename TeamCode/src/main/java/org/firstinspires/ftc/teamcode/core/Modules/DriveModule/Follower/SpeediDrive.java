@@ -30,7 +30,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.Chassis;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Chassis.MecanumChassis;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
@@ -46,11 +46,11 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-public class GoToPoint implements Module {
+public class SpeediDrive implements Module {
     private static final SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
     private static final PIDController hPid = new PIDController(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
     public PinPointLocalizer localizer;
-    public Chassis motors;
+    public MecanumChassis motors;
     public boolean robotIsStuck = false;
     public SplineFollower follower;
     public Spline curve = null;
@@ -78,9 +78,9 @@ public class GoToPoint implements Module {
     private int n;
 
 
-    public GoToPoint(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
+    public SpeediDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
+        motors = new MecanumChassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
 
         if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
@@ -96,9 +96,9 @@ public class GoToPoint implements Module {
 
     }
 
-    public GoToPoint(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
+    public SpeediDrive(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
+        motors = new MecanumChassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
 
         if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
@@ -114,9 +114,9 @@ public class GoToPoint implements Module {
 
     }
 
-    public GoToPoint(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean brake, boolean isAuto) {
+    public SpeediDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean brake, boolean isAuto) {
         Globals.isAuto = isAuto;
-        motors = new Chassis(hardwareMap, brake);
+        motors = new MecanumChassis(hardwareMap, brake);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
         if (useDashboard) poseTracker = new DashboardPoseTracker(localizer);
         timer.reset();

@@ -36,87 +36,93 @@ Servo motors:
 package org.firstinspires.ftc.teamcode.core.Util.utils;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 
+import org.firstinspires.ftc.teamcode.core.Util.Hardware.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @Config
 public class Constants {
-    public static boolean useDashboard = true;
-
+    public static boolean useDashboard = true;//TODO Should be false after the autos is done so loop time is better
+    public static boolean disableWarningErrors = false; //TODO Should be true after the autos is done so no crashes happen during comps
     public static double robotWidthInCMs = 10;//LEFT TO RIGHT DISTANCE(positive always)
     public static double robotLengthInCMs = 10;//FRONT TO BACK DISTANCE(positive always)
-    //Localization Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static final double cmPerTickForward = 1.00 / (19.89436789f / 10);
-    public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);
-    //For classic TwoWheelLocalizer:
-    public static double perpXTicks = 0.0; // x position of the perpendicular encoder (in tick units)
-    public static double parYTicks = 0.0; // y position of the parallel encoder (in tick units)
-
-
-    //For PinPointLocalizer:
-    public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm
-    public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
-
-    public static boolean shouldUsePhysicalBraking = true;//TODO IF THIS IS TRUE DO NOT ADD kD TO THE tPIDCoeff_GoToPoint AND ADJUST xDeceleration and yDeceleration INSTEAD
-    public static double xDeceleration = 247.58438571923446, yDeceleration =  270.13739836707487; //Deceleration for velocity-based stopping
-
-    //Localization Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
-
-    //GoToPoint Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static double velocityThreshold = 7; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
-
-    public static boolean useFinalAdj = true;
-    public static boolean holdFinalPoint = true;
 
     @Config
-    public static class DriveCorrectionCoefficients {
+    public static class LocalizerConstants {
+        public static boolean shouldReverseLateralEncoder = true;
+        public static boolean shouldReverseForwardEncoder = false;
+        public static final double cmPerTickForward = 1.00 / (19.89436789f / 10); //TODO ADJUST THIS FOR PinpointLocalizer in case you use anything else than goBilda encoders
+        public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);
+        //TODO For classic TwoWheelLocalizer:
+        public static double perpXTicks = 0.0; // x position of the perpendicular encoder (in tick units)
+        public static double parYTicks = 0.0; // y position of the parallel encoder (in tick units)
+        public static RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection = RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
+        public static RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        //TODO For PinPointLocalizer:
+        public static GoBildaPinpointDriver.GoBildaOdometryPods typeOfEncoders = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD;
+        public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm
+        public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
+    }
+
+    @Config
+    public static class GoToPointConstants {
+        public static boolean shouldUsePhysicalBraking = true;//TODO IF THIS IS TRUE DO NOT ADD kD TO THE tPIDCoeff_GoToPoint AND ADJUST (xDeceleration and yDeceleration) INSTEAD
+        public static double xDeceleration = 247.58438571923446;
+        public static double yDeceleration = 270.13739836707487; //Deceleration for velocity-based stopping
+
+
         public static PIDCoefficients
                 tPIDCoeff_GoToPoint = new PIDCoefficients(0.1, 0, 0.0),
-                tPIDCoeff_Spline = new PIDCoefficients(0.15, 0, 0.001),
-                hPIDCoeff = new PIDCoefficients(1, 0, 0.005);
+                hPIDCoeff_GoToPoint = new PIDCoefficients(1, 0, 0.005);
 
-
+        public static boolean useFinalAdj = true;
         public static PIDCoefficients
                 tPIDCoeff_finalAdj = new PIDCoefficients(0.1, 0, 0.005),
                 hPIDCoeff_finalAdj = new PIDCoefficients(0.7, 0, 0.0075);
+
+
+        public static double velocityThreshold = 7; //velocity treshold for knowing when the robot is stopped quicker than becoming 0
+        public static boolean holdFinalPoint = true;
     }
-    //GoToPoint Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
 
-    //Chassis Constants ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-    public static final double xMaxVelocity = 267.5613572791492; //lateral
-    public static final double yMaxVelocity = 294.10969518367864; //forward
-    public static Vector frontLeftVector = new Vector(-xMaxVelocity, yMaxVelocity).scaleToMagnitude(1);
+    @Config
+    public static class MecanumChassisConstants {
+        public static boolean shouldReverseLeftForwardMotor = false;
+        public static boolean shouldReverseRightForwardMotor = true;
+        public static boolean shouldReverseLeftBackMotor = false;
+        public static boolean shouldReverseRightBackMotor = true;
 
-    //TODO Copy values with voltage correction
-    public static double[] minPowersToOvercomeStaticFriction = new double[]{
-            0.2054365061678371,// leftFront
-            0.2253323134198863,// leftBack
-            0.20239842553744758,// rightFront
-            0.22502940962152113// rightBack
-    };
-    public static double minPowerToOvercomeKineticFriction = 0.1309;
-    public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 92;//In MS
+        public static final double lateralChassisMaxVelocity = 267.5613572791492;
+        public static final double forwardChassisMaxVelocity = 294.10969518367864;
+
+        public static double[] minPowersToOvercomeStaticFriction = new double[]{ //TODO Copy values with voltage correction
+                0.2054365061678371,// leftFront
+                0.2253323134198863,// leftBack
+                0.20239842553744758,// rightFront
+                0.22502940962152113// rightBack
+        };
+        public static double minPowerToOvercomeKineticFriction = 0.1309;
+        public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 92;//In MS
 
 
-    public static double lateralMultiplier = 2.2;
-    /// In case u want slower lateral rate of change(can also correct strafing imperfections)
-    public static double forwardMultiplier = 1;
-    /// In case u want slower heading rate of change at GoToPoint
-    public static double headingMultiplier = 1;
-    /// In case u want slower heading rate of change at GoToPoint
+        public static double lateralMultiplier = 2.2;
+        /// In case u want slower heading rate of change at GoToPoint
+        public static final double Lateral = lateralMultiplier;
+        /// In case u want slower lateral rate of change(can also correct strafing imperfections)
+        public static double forwardMultiplier = 1;
+        public static final double Forward = forwardMultiplier;
+        /// In case u want slower heading rate of change at GoToPoint
+        public static double headingMultiplier = 1;
+        public static final double Heading = headingMultiplier;
 
-    public static final double Lateral = lateralMultiplier;
-    public static final double Forward = forwardMultiplier;
-    public static final double Heading = headingMultiplier;
-    //Chassis Constants ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
-    public static void resetMultipliers() {
-        headingMultiplier = Heading;
-        lateralMultiplier = Lateral;
-        forwardMultiplier = Forward;
+        public static void resetMultipliers() {
+            headingMultiplier = Heading;
+            lateralMultiplier = Lateral;
+            forwardMultiplier = Forward;
+        }
     }
 
     @Config
@@ -125,9 +131,13 @@ public class Constants {
         public static double TotalMassOfRobot = 9.5; //In KG
         public static double CentripetalScalingFactor = 0.00037;
         public static boolean shouldBrake = true;
+        public static PIDCoefficients
+                tPIDCoeff_SplineFollower = new PIDCoefficients(0.15, 0, 0.001),
+                hPIDCoeff_SplineFollower = new PIDCoefficients(1, 0, 0.005);
     }
 
     public static final double WAIT_TIME_VARIABLE = 99999999.991; //IGNORA
+
     @Config
     public static class DeviceNames {
         public static String leftFrontMotorName = "LFM";

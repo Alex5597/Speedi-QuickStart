@@ -1,13 +1,16 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinPointName;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickForward;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickLateral;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.parYEncoderLateralDistanceToCenterOfRotation;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.perpXEncoderForwardDistanceToCenterOfRotation;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.xDeceleration;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.xDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.parYEncoderLateralDistanceToCenterOfRotation;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.perpXEncoderForwardDistanceToCenterOfRotation;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseForwardEncoder;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseLateralEncoder;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.typeOfEncoders;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -36,11 +39,10 @@ public class PinPointLocalizer implements Localizer {
 
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose) {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
+
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
-
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL
-
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
+        odo.setEncoderResolution(typeOfEncoders);
+        odo.setEncoderDirections(shouldReverseForwardEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD, shouldReverseLateralEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);
@@ -59,10 +61,8 @@ public class PinPointLocalizer implements Localizer {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
 
         odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
-
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);//COUNTS_PER_REVOLUTION / CIRCUMFERENCE OF THE WHEEL IN MM
-
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO;
+        odo.setEncoderResolution(typeOfEncoders);
+        odo.setEncoderDirections(shouldReverseForwardEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD, shouldReverseLateralEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();
         try {
             Thread.sleep(500);

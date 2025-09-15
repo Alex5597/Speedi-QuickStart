@@ -128,7 +128,7 @@ public class Vector {
     }
 
     public double getRelativeHeading() {
-        return Math.atan2(y, x);
+        return angleWrapper(Math.atan2(y, x));
     }
 
     public double getMagnitude() {

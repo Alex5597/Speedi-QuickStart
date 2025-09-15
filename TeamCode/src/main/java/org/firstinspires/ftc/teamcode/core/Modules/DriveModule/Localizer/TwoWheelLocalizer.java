@@ -1,11 +1,15 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickForward;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.cmPerTickLateral;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.parYTicks;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.perpXTicks;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.xDeceleration;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.xDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.logoFacingDirection;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.parYTicks;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.perpXTicks;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseForwardEncoder;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseLateralEncoder;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.usbFacingDirection;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Globals.isAuto;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
@@ -17,7 +21,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngularVelocity;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.Module;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.LowPassFilter;
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.Encoder;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
@@ -59,14 +62,14 @@ public class TwoWheelLocalizer implements Localizer {
         par = new Encoder(hardwareMap.get(DcMotorEx.class, "LFM"));
         perp = new Encoder(hardwareMap.get(DcMotorEx.class, "RFM"));
 
-        par.setDirection(Encoder.Direction.REVERSE);
-        perp.setDirection(Encoder.Direction.FORWARD);
+        par.setDirection(shouldReverseForwardEncoder ? Encoder.Direction.REVERSE : Encoder.Direction.FORWARD);
+        perp.setDirection(shouldReverseLateralEncoder ? Encoder.Direction.REVERSE : Encoder.Direction.FORWARD);
 
         imu = hardwareMap.get(IMU.class, "imu");
         imu.resetDeviceConfigurationForOpMode();
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+                logoFacingDirection,
+                usbFacingDirection));
         imu.initialize(parameters);
         imu.resetYaw();
         initialHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
@@ -121,7 +124,7 @@ public class TwoWheelLocalizer implements Localizer {
                         AngleUnit.RADIANS
                 )
         );
-        currentPosition.setHeading(angleWrapper(currentPosition.getHeading(AngleUnit.RADIANS)),AngleUnit.RADIANS);
+        currentPosition.setHeading(angleWrapper(currentPosition.getHeading(AngleUnit.RADIANS)), AngleUnit.RADIANS);
 
 
         velocity = new Vector(yVelocityFilter.getValue(-dyVelocity), xVelocityFilter.getValue(dxVelocity));
@@ -141,7 +144,7 @@ public class TwoWheelLocalizer implements Localizer {
     @Override
     public void updateOnlyImu() {
         double angle = startAngle + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading;
-        currentPosition.setHeading(angleWrapper(angle),AngleUnit.RADIANS);
+        currentPosition.setHeading(angleWrapper(angle), AngleUnit.RADIANS);
     }
 
     @Override

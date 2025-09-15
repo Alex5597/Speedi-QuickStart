@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.core.Util.Hardware;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.SWITCH_FROM_STATIC_TO_KINETIC_FRICTION;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.SWITCH_FROM_STATIC_TO_KINETIC_FRICTION;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;

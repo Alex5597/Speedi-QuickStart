@@ -1,18 +1,15 @@
 package org.firstinspires.ftc.teamcode.OpModes.SpeediTuningAndTesting.Testing.ChassisTests;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
-import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 
 @TeleOp
 public class TestSpline extends LinearOpMode {
@@ -35,7 +32,7 @@ public class TestSpline extends LinearOpMode {
 
         // DrawRobot.drawPath(spline1, "#3F51B5");
 
-        MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true);
+        GoToPoint drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true);
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {

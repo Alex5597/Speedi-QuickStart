@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @TeleOp(name = "Kinetic Kstatic Tuner")
@@ -17,8 +17,8 @@ public class KineticKStaticTuner extends LinearOpMode {
     @Override
     public void runOpMode() {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
-        MecanumDrive robot = new MecanumDrive(hardwareMap, telemetry, true);
-        robot.setRunMode(MecanumDrive.RunMode.MANUAL);
+        GoToPoint robot = new GoToPoint(hardwareMap, telemetry, true);
+        robot.setRunMode(GoToPoint.RunMode.MANUAL);
         waitForStart();
         double power = 0.0;
 

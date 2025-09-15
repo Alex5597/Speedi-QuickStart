@@ -1,19 +1,18 @@
 package org.firstinspires.ftc.teamcode.OpModes.SpeediTuningAndTesting.Testing.ChassisTests;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 
 @TeleOp
 public class MotorConfigTest extends LinearOpMode {
-    MecanumDrive drive;
+    GoToPoint drive;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        drive = new MecanumDrive(hardwareMap, telemetry,true);
-        drive.setRunMode(MecanumDrive.RunMode.MANUAL);
+        drive = new GoToPoint(hardwareMap, telemetry,true);
+        drive.setRunMode(GoToPoint.RunMode.MANUAL);
         waitForStart();
 
         while (opModeIsActive()) {

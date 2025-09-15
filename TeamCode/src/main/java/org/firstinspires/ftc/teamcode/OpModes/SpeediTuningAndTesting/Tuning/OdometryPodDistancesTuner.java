@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
@@ -22,7 +22,7 @@ import java.util.List;
 @TeleOp
 public class OdometryPodDistancesTuner extends LinearOpMode {
     ElapsedTime timer = new ElapsedTime();
-    MecanumDrive drive;
+    GoToPoint drive;
     PinPointLocalizer localizer;
     public static double timeToRotate_MS = 10000;//MS
     private double lastAngle = 0, lastTime = 0;
@@ -33,7 +33,7 @@ public class OdometryPodDistancesTuner extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
-        drive = new MecanumDrive(hardwareMap, new Pose(), telemetry, true, true);
+        drive = new GoToPoint(hardwareMap, new Pose(), telemetry, true, true);
 
         waitForStart();
         drive.motors.setMotorPower(0.5, 0.5, -0.5, -0.5);

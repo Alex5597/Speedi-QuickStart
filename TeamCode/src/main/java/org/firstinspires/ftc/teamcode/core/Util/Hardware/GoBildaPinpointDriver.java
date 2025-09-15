@@ -24,6 +24,7 @@ package org.firstinspires.ftc.teamcode.core.Util.Hardware;
 
 import static com.qualcomm.robotcore.util.TypeConversion.byteArrayToInt;
 
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Globals.reads;
 
 import com.qualcomm.hardware.lynx.LynxI2cDeviceSynch;
@@ -151,7 +152,8 @@ public class GoBildaPinpointDriver extends I2cDeviceSynchDevice<I2cDeviceSynchSi
     //enum that captures the kind of goBILDA odometry pods, if goBILDA pods are used
     public enum GoBildaOdometryPods {
         goBILDA_SWINGARM_POD,
-        goBILDA_4_BAR_POD;
+        goBILDA_4_BAR_POD,
+        custom
     }
 
     //enum that captures a limited scope of read data. More options may be added in future update
@@ -376,6 +378,9 @@ public class GoBildaPinpointDriver extends I2cDeviceSynchDevice<I2cDeviceSynchSi
         }
         if (pods == GoBildaOdometryPods.goBILDA_4_BAR_POD) {
             writeByteArray(Register.MM_PER_TICK, (floatToByteArray(goBILDA_4_BAR_POD, ByteOrder.LITTLE_ENDIAN)));
+        }
+        if(pods == GoBildaOdometryPods.custom) {
+            writeByteArray(Register.MM_PER_TICK, (floatToByteArray((float) (cmPerTickForward * 10.0), ByteOrder.LITTLE_ENDIAN)));
         }
     }
 

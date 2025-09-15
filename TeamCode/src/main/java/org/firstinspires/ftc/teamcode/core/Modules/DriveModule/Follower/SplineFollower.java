@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_Spline;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.hPIDCoeff_SplineFollower;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.tPIDCoeff_SplineFollower;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.shouldBrake;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
@@ -21,10 +21,10 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
-public class SplineFollowing {
+public class SplineFollower {
     public Spline trajectory;
-    public static PIDController tPid = new PIDController(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d);
-    public static PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+    public static PIDController tPid = new PIDController(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d);
+    public static PIDController hPid = new PIDController(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
     Telemetry telemetry;
     double lastT = 0, currentT = 0;
     Vector finalPoint;
@@ -32,7 +32,7 @@ public class SplineFollowing {
     double tLerp = 0;
     boolean tangential = false;
 
-    public SplineFollowing(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
+    public SplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
         this.instantHeading = true;
@@ -44,8 +44,8 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
-        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
+        hPid.setPID(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
 
         // xPid.reset();
         // yPid.reset();
@@ -53,7 +53,7 @@ public class SplineFollowing {
         hPid.reset();
     }
 
-    public SplineFollowing(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
+    public SplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
 
@@ -67,8 +67,8 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
-        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
+        hPid.setPID(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
 
         //xPid.reset();
         //yPid.reset();
@@ -76,7 +76,7 @@ public class SplineFollowing {
         hPid.reset();
     }
 
-    public SplineFollowing(@NonNull Spline trajectory, Telemetry telemetry, boolean tangential) {
+    public SplineFollower(@NonNull Spline trajectory, Telemetry telemetry, boolean tangential) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
 
@@ -88,8 +88,8 @@ public class SplineFollowing {
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
-        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
+        hPid.setPID(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
 
         //xPid.reset();
         //yPid.reset();
@@ -101,8 +101,8 @@ public class SplineFollowing {
         if (goToPoint)
             return new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE);
 
-        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
-        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
+        hPid.setPID(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
 
         // Finding closest point
         currentT = trajectory.findClosestPoint(robotPose.toVec(), lastT);

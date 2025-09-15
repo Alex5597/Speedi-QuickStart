@@ -8,13 +8,13 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
 @Config
 @TeleOp
 public class ChassisPIDTuner extends LinearOpMode {
-    MecanumDrive drive;
+    GoToPoint drive;
     enum State {
         DRIVING,
         AUTO
@@ -30,7 +30,7 @@ public class ChassisPIDTuner extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new MecanumDrive(hardwareMap, startPose, telemetry, true);
+        drive = new GoToPoint(hardwareMap, startPose, telemetry, true);
         state = State.AUTO;
 
         telemetry.update();
@@ -68,7 +68,7 @@ public class ChassisPIDTuner extends LinearOpMode {
                         drive.update();
                         if (gamepad1.a) {
                             state = State.DRIVING;
-                            drive.setRunMode(MecanumDrive.RunMode.MANUAL);
+                            drive.setRunMode(GoToPoint.RunMode.MANUAL);
                             drive.stop();
                             break;
                         }

@@ -8,17 +8,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
-import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
-import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.CubicBezierCurve;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
-import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
 @TeleOp
 public class SplinePIDTuner extends LinearOpMode {
-    MecanumDrive drive;
+    GoToPoint drive;
 
     enum State {
         DRIVING,
@@ -35,7 +32,7 @@ public class SplinePIDTuner extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new MecanumDrive(hardwareMap, startPose, telemetry, true);
+        drive = new GoToPoint(hardwareMap, startPose, telemetry, true);
         state = State.AUTO;
 
         waitForStart();
@@ -55,13 +52,13 @@ public class SplinePIDTuner extends LinearOpMode {
                     break;
                 case AUTO:
                     drive.setTargetPose(targetPos,true);
-                    Constants.holdFinalPoint = true;
-                    drive.setRunMode(MecanumDrive.RunMode.CalibrateSplinePID);
+                    Constants.GoToPointConstants.holdFinalPoint = true;
+                    drive.setRunMode(GoToPoint.RunMode.CalibrateSplinePID);
                     while (opModeIsActive()) {
                         drive.update();
                         if (gamepad1.a) {
                             state = State.DRIVING;
-                            drive.setRunMode(MecanumDrive.RunMode.MANUAL);
+                            drive.setRunMode(GoToPoint.RunMode.MANUAL);
                             drive.stop();
                             break;
                         }

@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.core.Util.utils;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotLengthInCMs;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotWidthInCMs;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
@@ -10,7 +8,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.MecanumDrive;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.GoToPoint;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.Spline;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
@@ -19,12 +17,12 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 public class DrawRobot {
     private static TelemetryPacket packet;
 
-    public static void drawDebug(MecanumDrive drive) {
+    public static void drawDebug(GoToPoint drive) {
         Pose pose = drive.getLocalizerInstance().getPoseEstimate();
-        if (drive.getRunMode() == MecanumDrive.RunMode.Spline) {
+        if (drive.getRunMode() == GoToPoint.RunMode.Spline) {
             Spline spline = drive.curve;
             drawPath(spline, "#3F51B5");
-        } else if (drive.getRunMode() == MecanumDrive.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
+        } else if (drive.getRunMode() == GoToPoint.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {
             drawGoToPoint(pose, drive.getTarget(), "#3F51B5");
         }
         drawPoseHistory(drive.poseTracker, "#4CAF50");

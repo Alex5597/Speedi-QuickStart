@@ -1,24 +1,25 @@
-package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive;
+package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.hPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_GoToPoint;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_Spline;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DriveCorrectionCoefficients.tPIDCoeff_finalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Forward;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Heading;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.Lateral;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.tPIDCoeff_SplineFollower;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.hPIDCoeff_GoToPoint;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.hPIDCoeff_finalAdj;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.tPIDCoeff_GoToPoint;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.tPIDCoeff_finalAdj;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.useFinalAdj;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.Forward;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.Heading;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.Lateral;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.forwardMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.headingMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.lateralMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.forwardMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.headingMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.holdFinalPoint;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.disableWarningErrors;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.holdFinalPoint;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotLengthInCMs;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotWidthInCMs;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useDashboard;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.useFinalAdj;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.velocityThreshold;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.velocityThreshold;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Globals.isAuto;
 
 import com.arcrobotics.ftclib.controller.PIDController;
@@ -29,7 +30,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Drive.Chassis;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
@@ -45,13 +46,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
-public class MecanumDrive implements Module {
+public class GoToPoint implements Module {
     private static final SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-    private static final PIDController hPid = new PIDController(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+    private static final PIDController hPid = new PIDController(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
     public PinPointLocalizer localizer;
     public Chassis motors;
     public boolean robotIsStuck = false;
-    public SplineFollowing follower;
+    public SplineFollower follower;
     public Spline curve = null;
     public DashboardPoseTracker poseTracker;
     Telemetry telemetry;
@@ -77,7 +78,7 @@ public class MecanumDrive implements Module {
     private int n;
 
 
-    public MecanumDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
+    public GoToPoint(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
         motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
@@ -88,14 +89,14 @@ public class MecanumDrive implements Module {
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
 
         tPid.reset();
         hPid.reset();
 
     }
 
-    public MecanumDrive(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
+    public GoToPoint(HardwareMap hardwareMap, Telemetry telemetry, boolean isAuto) {
         Globals.isAuto = isAuto;
         motors = new Chassis(hardwareMap, !shouldUsePhysicalBraking);
         localizer = new PinPointLocalizer(hardwareMap, new Pose(), telemetry);
@@ -106,14 +107,14 @@ public class MecanumDrive implements Module {
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
 
         tPid.reset();
         hPid.reset();
 
     }
 
-    public MecanumDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean brake, boolean isAuto) {
+    public GoToPoint(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean brake, boolean isAuto) {
         Globals.isAuto = isAuto;
         motors = new Chassis(hardwareMap, brake);
         localizer = new PinPointLocalizer(hardwareMap, startPose, telemetry);
@@ -123,7 +124,7 @@ public class MecanumDrive implements Module {
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
 
         tPid.reset();
         hPid.reset();
@@ -142,7 +143,7 @@ public class MecanumDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
-        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
+        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
@@ -161,7 +162,7 @@ public class MecanumDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
-        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
+        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
@@ -174,7 +175,7 @@ public class MecanumDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
-        follower = new SplineFollowing(localizer.getPoseEstimate(), trajectory, telemetry);
+        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
@@ -202,7 +203,7 @@ public class MecanumDrive implements Module {
         motors.setMinPowersToOvercomeFriction();
 
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
 
         tPid.reset();
         hPid.reset();
@@ -232,7 +233,7 @@ public class MecanumDrive implements Module {
         motors.setMinPowersToOvercomeFriction();
 
         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
 
         tPid.reset();
         hPid.reset();
@@ -413,11 +414,11 @@ public class MecanumDrive implements Module {
                         headingMultiplier = Heading;
                     if (runMode != RunMode.CalibrateSplinePID) {
                         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-                        hPid.setPIDF(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d, 0);
+                        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
                     } else {
                         motors.setMinPowersToOvercomeFriction();
-                        tPid.setPIDF(tPIDCoeff_Spline.p, tPIDCoeff_Spline.i, tPIDCoeff_Spline.d, 0);
-                        hPid.setPID(hPIDCoeff.p, hPIDCoeff.i, hPIDCoeff.d);
+                        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
+                        hPid.setPID(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
                     }
                 }
 
@@ -582,7 +583,10 @@ public class MecanumDrive implements Module {
             case HOURS:
                 return timerSinceStart.seconds() / 3600.0;
             default:
-                throw new IllegalArgumentException("Are you serious you need it in " + unit + " \uD83D\uDE02");
+                if (!disableWarningErrors)
+                    throw new IllegalArgumentException("Are you serious you need it in " + unit + " \uD83D\uDE02");
+                else
+                    return 0;
         }
     }
 
@@ -612,7 +616,7 @@ public class MecanumDrive implements Module {
         this.topRightCorner = new Pose(bottomRightCorner.getX(DistanceUnit.CM), topLeftCorner.getY(DistanceUnit.CM), DistanceUnit.CM);
         this.bottomRightCorner = bottomRightCorner;
         this.bottomLeftCorner = new Pose(topLeftCorner.getX(DistanceUnit.CM), bottomRightCorner.getY(DistanceUnit.CM), DistanceUnit.CM);
-        if (topLeftCorner.getX(DistanceUnit.CM) >= bottomRightCorner.getX(DistanceUnit.CM) || topLeftCorner.getY(DistanceUnit.CM) <= bottomRightCorner.getY(DistanceUnit.CM))
+        if (!disableWarningErrors && topLeftCorner.getX(DistanceUnit.CM) >= bottomRightCorner.getX(DistanceUnit.CM) || topLeftCorner.getY(DistanceUnit.CM) <= bottomRightCorner.getY(DistanceUnit.CM))
             throw new IllegalArgumentException("Zona no go definita gresit. Deschide desmos si verifica.");
         noGoZone = true;
         willEnterNoGoZone = false;
@@ -641,7 +645,26 @@ public class MecanumDrive implements Module {
             lastTolerance = tolerance;
         lastShouldWaitToStop = shouldWaitToStop;
         Queue<Pose> targetPoses = findBestCorners(localizer.getPoseEstimate(), targetPose);
-        setTargetsList(targetPoses);
+        if (targetPoses == null) {
+            goingToNewTargetForAvoidingNoGoZone = false;
+            willEnterNoGoZone = false;
+            noGoZone = true;
+
+            this.shouldWaitToStop = lastShouldWaitToStop;
+            this.runMode = RunMode.PID;
+            this.targetPose = lastTarget;
+            targetPositions.clear();
+            trajectoryDone = false;
+            isOnlyTarget = true;
+            startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
+            customTolerance = true;
+            robotIsStuck = false;
+            timerSinceStart.reset();
+            this.tolerance = lastTolerance;
+            timerResetFailsafe = false;
+        }
+        else
+            setTargetsList(targetPoses);
     }
 
     public Queue<Pose> findBestCorners(Pose start, Pose target) {
@@ -652,8 +675,8 @@ public class MecanumDrive implements Module {
         double bottom = bottomRightCorner.getY(DistanceUnit.CM);
 
         // If start/target fall inside inflated rect, push them to nearest outside point (not a corner)
-        Pose s = pointInRect(start, left, right, bottom, top) ? clampToOutside() : start;
-        Pose t = pointInRect(target, left, right, bottom, top) ? clampToOutside() : target;
+        Pose s = pointInRect(start, left, right, bottom, top) ? clampToOutside(start) : start;
+        Pose t = pointInRect(target, left, right, bottom, top) ? clampToOutside(target) : target;
 
         Pose[] corners = new Pose[]{
                 topLeftCorner, // TL
@@ -698,21 +721,21 @@ public class MecanumDrive implements Module {
         Pose bestCornerWithTolerance;
 
         minDist = Math.min(Math.min(Math.min(a, b), c), d);
-        if (minDist == a) {
+        if (minDist == a && a != Double.MAX_VALUE) {
             bestCornerWithTolerance = cornersWithTolerance[2];
             bestCorner = bottomRightCorner;
-        } else if (minDist == b) {
+        } else if (minDist == b && b != Double.MAX_VALUE) {
             bestCornerWithTolerance = cornersWithTolerance[3];
             bestCorner = bottomLeftCorner;
-        } else if (minDist == c) {
+        } else if (minDist == c && c != Double.MAX_VALUE) {
             bestCornerWithTolerance = cornersWithTolerance[0];
             bestCorner = topLeftCorner;
         } else if (d != Double.MAX_VALUE) {
             bestCornerWithTolerance = cornersWithTolerance[1];
             bestCorner = topRightCorner;
-        } else {
+        } else if (!disableWarningErrors) {
             throw new RuntimeException("no go zone can not be avoided");
-        }
+        } else return null;
         Queue<Pose> bestCorners = new LinkedList<>();
 
         for (int i = 0; i < 4; i++) {
@@ -722,8 +745,11 @@ public class MecanumDrive implements Module {
                 break;
             }
         }
-        if (bestCorners.isEmpty())
-            throw new RuntimeException("no go zone can not be avoided");
+        if (bestCorners.isEmpty()) {
+            if (!disableWarningErrors)
+                throw new RuntimeException("no go zone can not be avoided");
+            else return null;
+        }
         bestCorners.add(bestCornerWithTolerance);
         return bestCorners;
     }
@@ -762,8 +788,11 @@ public class MecanumDrive implements Module {
         return x > left && x < right && y > bottom && y < top && isPoseInsideTheField(p); // strict interior
     }
 
-    private static Pose clampToOutside() {
-        throw new IllegalArgumentException("Target or start is inside no go zone or outside the field");
+    private Pose clampToOutside(Pose a) {
+        if (!disableWarningErrors)
+            throw new IllegalArgumentException("Target or start is inside no go zone or outside the field");
+        else
+            return a;
     }
 
     public Pose getLastTarget() {

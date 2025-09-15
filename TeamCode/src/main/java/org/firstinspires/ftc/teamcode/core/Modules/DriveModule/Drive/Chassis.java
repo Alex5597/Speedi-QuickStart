@@ -4,17 +4,20 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNam
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.leftFrontMotorName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.rightBackMotorName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.rightFrontMotorName;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.frontLeftVector;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.lateralMultiplier;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.minPowerToOvercomeKineticFriction;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.minPowersToOvercomeStaticFriction;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.forwardChassisMaxVelocity;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.lateralChassisMaxVelocity;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.minPowerToOvercomeKineticFriction;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.minPowersToOvercomeStaticFriction;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.shouldReverseLeftBackMotor;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.shouldReverseLeftForwardMotor;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.shouldReverseRightBackMotor;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.shouldReverseRightForwardMotor;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.core.Modules.Module;
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.CoolMotor;
@@ -33,7 +36,7 @@ public class Chassis implements Module {
     double[] wheelSpeeds = new double[4];
     private double maxPower = 1;
     double driveMultiplier = 1;
-    final Vector copiedFrontLeftVector = frontLeftVector;
+    final Vector copiedFrontLeftVector = new Vector(-lateralChassisMaxVelocity, forwardChassisMaxVelocity).scaleToMagnitude(1);
     final Vector[] mecanumVectors = new Vector[]{
             Vector.polar(copiedFrontLeftVector.getMagnitude(), copiedFrontLeftVector.getRelativeHeading()),
             Vector.polar(copiedFrontLeftVector.getMagnitude(), 2 * Math.PI - copiedFrontLeftVector.getRelativeHeading()),
@@ -54,14 +57,22 @@ public class Chassis implements Module {
             RBM.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             RFM.motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
-        RBM.motor.setDirection(DcMotorEx.Direction.REVERSE);
-        RFM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+
+        if (shouldReverseLeftBackMotor)
+            LBM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+        if (shouldReverseRightForwardMotor)
+            RFM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+        if (shouldReverseLeftForwardMotor)
+            LFM.motor.setDirection(DcMotorEx.Direction.REVERSE);
+        if (shouldReverseRightBackMotor)
+            RBM.motor.setDirection(DcMotorEx.Direction.REVERSE);
         motors = Arrays.asList(LFM, LBM, RFM, RBM);
 
         Globals.voltage = hardwareMap.voltageSensor.iterator().next().getVoltage();
         voltageTimer.reset();
         setMinPowersToOvercomeFriction();
     }
+
     public void setMotorPowerForced(Vector input) {
         wheelSpeeds[0] = input.getY() + input.getX() + input.getHeading();//LEFT FRONT
         wheelSpeeds[1] = input.getY() - input.getX() + input.getHeading();//LEFT BACK
@@ -82,6 +93,7 @@ public class Chassis implements Module {
         for (int i = 0; i < 4; i++)
             motors.get(i).setPowerForced(wheelSpeeds[i]);
     }
+
     public void setMotorPower(Vector input) {
         wheelSpeeds[0] = input.getY() + input.getX() + input.getHeading();//LEFT FRONT
         wheelSpeeds[1] = input.getY() - input.getX() + input.getHeading();//LEFT BACK
@@ -102,6 +114,7 @@ public class Chassis implements Module {
         for (int i = 0; i < 4; i++)
             motors.get(i).setTargetPowerSmooth(wheelSpeeds[i]);
     }
+
     public void setMotorPower(Vector[] truePathingVectors) {
         truePathingVectors[0] = truePathingVectors[0].scalarMultiply(2.0);
         truePathingVectors[1] = truePathingVectors[1].scalarMultiply(2.0);
@@ -210,11 +223,11 @@ public class Chassis implements Module {
         this.maxPower = maxPower;
     }
 
-    public void setDriveMultiplier(double driveMultiplier){
+    public void setDriveMultiplier(double driveMultiplier) {
         this.driveMultiplier = driveMultiplier;
     }
 
-    public double getDriveMultiplier(){
-        return  driveMultiplier;
+    public double getDriveMultiplier() {
+        return driveMultiplier;
     }
 }

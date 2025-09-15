@@ -5,7 +5,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollowing;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SplineFollower;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.Localizer;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator.BezierSpline;
@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @TeleOp
 public class SpeedOverTrajectoryTest extends LinearOpMode {
-    SplineFollowing follower;
+    SplineFollower follower;
     Localizer localizer;
     Spline spline;
 
@@ -25,7 +25,7 @@ public class SpeedOverTrajectoryTest extends LinearOpMode {
         telemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry(), telemetry);
         spline = new BezierSpline(new CubicBezierCurve(new Vector(0, 0), new Vector(-137, -50), new Vector(-43, 23), new Vector(-169, 23), Math.toRadians(0)));
         localizer = new PinPointLocalizer(hardwareMap, new Pose());
-        follower = new SplineFollowing(localizer.getPoseEstimate(), spline, telemetry);
+        follower = new SplineFollower(localizer.getPoseEstimate(), spline, telemetry);
 
         waitForStart();
 

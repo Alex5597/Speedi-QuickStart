@@ -667,13 +667,11 @@ public class MecanumDrive implements Module {
                 bottomRightCorner.add(new Pose(robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM)), // BR
                 bottomLeftCorner.add(new Pose(-robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM))  // BL
         };
-        if (!(isPoseInsideTheField(cornersWithTolerance[0]) && isPoseInsideTheField(cornersWithTolerance[1]) && isPoseInsideTheField(cornersWithTolerance[2]) && isPoseInsideTheField(cornersWithTolerance[3])))
-            throw new IllegalArgumentException("No go zone and robot width and length will lead to robot going outside of field coordinates");
         Pose bestCorner = new Pose();
         double minDist = Double.MAX_VALUE;
         for (int i = 0; i < 4; i++) {
             Pose c = corners[i];
-            if (!segmentIntersectsRect(s, c) && !segmentIntersectsRect(c, t)) {
+            if (!segmentIntersectsRect(s, c) && !segmentIntersectsRect(c, t) && isPoseInsideTheField(cornersWithTolerance[i])) {
                 if (minDist > c.distanceTo(s, DistanceUnit.CM)) {
                     minDist = c.distanceTo(s, DistanceUnit.CM);
                     bestCorner = cornersWithTolerance[i];
@@ -685,10 +683,18 @@ public class MecanumDrive implements Module {
             poses.add(bestCorner);
             return poses;
         }
-        double a = bottomRightCorner.distanceTo(targetPose, DistanceUnit.CM);
-        double b = bottomLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
-        double c = topLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
-        double d = topRightCorner.distanceTo(targetPose, DistanceUnit.CM);
+        double a = Double.MAX_VALUE;
+        double b = Double.MAX_VALUE;
+        double c = Double.MAX_VALUE;
+        double d = Double.MAX_VALUE;
+        if (isPoseInsideTheField(cornersWithTolerance[2]))
+            a = bottomRightCorner.distanceTo(targetPose, DistanceUnit.CM);
+        if (isPoseInsideTheField(cornersWithTolerance[3]))
+            b = bottomLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
+        if (isPoseInsideTheField(cornersWithTolerance[0]))
+            c = topLeftCorner.distanceTo(targetPose, DistanceUnit.CM);
+        if (isPoseInsideTheField(cornersWithTolerance[1]))
+            d = topRightCorner.distanceTo(targetPose, DistanceUnit.CM);
         Pose bestCornerWithTolerance;
 
         minDist = Math.min(Math.min(Math.min(a, b), c), d);
@@ -701,19 +707,23 @@ public class MecanumDrive implements Module {
         } else if (minDist == c) {
             bestCornerWithTolerance = cornersWithTolerance[0];
             bestCorner = topLeftCorner;
-        } else {
+        } else if (d != Double.MAX_VALUE) {
             bestCornerWithTolerance = cornersWithTolerance[1];
             bestCorner = topRightCorner;
+        } else {
+            throw new RuntimeException("no go zone can not be avoided");
         }
         Queue<Pose> bestCorners = new LinkedList<>();
 
         for (int i = 0; i < 4; i++) {
             Pose corner = corners[i];
-            if (bestCorner != corner && areAdjacentAxisAligned(corner, bestCorner) && !segmentIntersectsRect(corner, s)) {
+            if (bestCorner != corner && areAdjacentAxisAligned(corner, bestCorner) && !segmentIntersectsRect(corner, s) && isPoseInsideTheField(cornersWithTolerance[i])) {
                 bestCorners.add(cornersWithTolerance[i]);
                 break;
             }
         }
+        if (bestCorners.isEmpty())
+            throw new RuntimeException("no go zone can not be avoided");
         bestCorners.add(bestCornerWithTolerance);
         return bestCorners;
     }
@@ -747,13 +757,13 @@ public class MecanumDrive implements Module {
         hPid.reset();
     }
 
-    private static boolean pointInRect(Pose p, double left, double right, double bottom, double top) {
+    private boolean pointInRect(Pose p, double left, double right, double bottom, double top) {
         double x = p.getX(DistanceUnit.CM), y = p.getY(DistanceUnit.CM);
-        return x > left && x < right && y > bottom && y < top; // strict interior
+        return x > left && x < right && y > bottom && y < top && isPoseInsideTheField(p); // strict interior
     }
 
     private static Pose clampToOutside() {
-        throw new IllegalArgumentException("Target is inside no go zone");
+        throw new IllegalArgumentException("Target or start is inside no go zone or outside the field");
     }
 
     public Pose getLastTarget() {

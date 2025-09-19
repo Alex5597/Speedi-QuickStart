@@ -45,13 +45,13 @@ import org.firstinspires.ftc.teamcode.core.Util.Hardware.GoBildaPinpointDriver;
 public class Constants {
     public static boolean useDashboard = true;//TODO Should be false after the autos is done so loop time is better
     public static boolean disableWarningErrors = false; //TODO Should be true after the autos is done so no crashes happen during comps
-    public static double robotWidthInCMs = 10;//LEFT TO RIGHT DISTANCE(positive always)
-    public static double robotLengthInCMs = 10;//FRONT TO BACK DISTANCE(positive always)
+    public static double robotWidthInCMs = 40;//LEFT TO RIGHT DISTANCE(positive always)
+    public static double robotLengthInCMs = 40;//FRONT TO BACK DISTANCE(positive always)
 
     @Config
     public static class LocalizerConstants {
-        public static boolean shouldReverseLateralEncoder = true;
-        public static boolean shouldReverseForwardEncoder = false;
+        public static boolean shouldReverseLateralEncoder = false;
+        public static boolean shouldReverseForwardEncoder = true;
         public static final double cmPerTickForward = 1.00 / (19.89436789f / 10); //TODO ADJUST THIS FOR PinpointLocalizer in case you use anything else than goBilda encoders
         public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);
         //TODO For classic TwoWheelLocalizer:

@@ -17,12 +17,12 @@ public class TestNoGoZone extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        drive = new SpeediDrive(hardwareMap, new Pose(-146, -162, DistanceUnit.CM), telemetry, true);
-        drive.setNoGoZone(new Pose(-230, 56, DistanceUnit.CM), new Pose(-30, -105, DistanceUnit.CM), 0);
+        drive = new SpeediDrive(hardwareMap, new Pose(-120, -36.5, DistanceUnit.CM), telemetry, true);
+        drive.setNoGoZone(new Pose(-183, 90.5, DistanceUnit.CM), new Pose(183, 31.5, DistanceUnit.CM), 70);
         telemetry.addLine("gata");
         telemetry.update();
         waitForStart();
-        drive.setTargetPose(new Pose(-120, -110, DistanceUnit.CM, 0, AngleUnit.DEGREES), new Pose(3, 3, DistanceUnit.CM, 3, AngleUnit.DEGREES), true);
+        drive.setTargetPose(new Pose(-120, 120, DistanceUnit.CM, 0, AngleUnit.DEGREES), new Pose(3, 3, DistanceUnit.CM, 3, AngleUnit.DEGREES), true);
         while (opModeIsActive()) {
             drive.update();
             drive.noGoZoneTelemetry(true);

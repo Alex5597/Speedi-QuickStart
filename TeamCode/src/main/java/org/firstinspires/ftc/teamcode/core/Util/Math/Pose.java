@@ -150,6 +150,10 @@ public class Pose {
         return Math.hypot(other.getX(distanceUnit) - this.getX(distanceUnit), other.getY(distanceUnit) - this.getY(distanceUnit));
     }
 
+    public void changeSideOfTheField() {
+        this.x = -this.x;
+    }
+
     public String toString() {
         return "Pose(" + x + ", " + y + ", " + Math.toDegrees(heading) + ")";
     }

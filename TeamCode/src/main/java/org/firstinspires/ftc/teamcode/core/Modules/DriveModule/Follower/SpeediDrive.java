@@ -252,6 +252,69 @@ public class SpeediDrive implements Module {
         }
     }
 
+    public void setTargetPose(Pose targetPose, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory, Pose topLeftCorner, Pose bottomRightCorner, double smoothingDist) {
+        disableNoGoZone();
+        setNoGoZone(topLeftCorner, bottomRightCorner, smoothingDist);
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
+        this.runMode = RunMode.PID;
+        this.targetPose = targetPose;
+        falseTargetPose = targetPose;
+        targetPositions.clear();
+        trajectoryDone = false;
+        isOnlyTarget = true;
+        robotIsStuck = false;
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
+        timerSinceStart.reset();
+        timerResetFailsafe = false;
+        motors.setMinPowersToOvercomeFriction();
+
+        tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
+
+        tPid.reset();
+        hPid.reset();
+        initialDistance = targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose)) {
+                recalibrateTargetToAvoidNoGoZone();
+            }
+        }
+    }
+
+    public void setTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory, Pose topLeftCorner, Pose bottomRightCorner, double smoothingDist) {
+        disableNoGoZone();
+        setNoGoZone(topLeftCorner, bottomRightCorner, smoothingDist);
+        this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
+        this.runMode = RunMode.PID;
+        this.targetPose = targetPose;
+        falseTargetPose = targetPose;
+        targetPositions.clear();
+        trajectoryDone = false;
+        isOnlyTarget = true;
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
+        timerSinceStart.reset();
+        timerResetFailsafe = false;
+        customTolerance = true;
+        robotIsStuck = false;
+        this.tolerance = tolerance;
+
+        motors.setMinPowersToOvercomeFriction();
+
+        tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+        hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
+
+        tPid.reset();
+        hPid.reset();
+
+        initialDistance = targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
+        if (noGoZone && !goingToNewTargetForAvoidingNoGoZone) {
+            if (checkIfInsideNoGoZone(localizer.getPoseEstimate(), targetPose)) {
+                recalibrateTargetToAvoidNoGoZone();
+            }
+        }
+    }
+
     public void updateTargetPose(Pose targetPose, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
         this.shouldWaitToStop = shouldWaitToStopCompletelyAtTheEndOfTrajectory;
         this.runMode = RunMode.PID;
@@ -304,7 +367,7 @@ public class SpeediDrive implements Module {
         this.targetPositions = targetPositions;
         this.shouldWaitToStop = false;
         n = targetPositions.size();
-        if (targetPositions.size() > 1) {
+        if (n > 1) {
             targetPose = targetPositions.poll();
             falseTargetPose = calculateFalseTarget(targetPose);
             startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
@@ -314,22 +377,19 @@ public class SpeediDrive implements Module {
             timerSinceStart.reset();
             timerResetFailsafe = false;
             initialDistance = targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
-        } else
-            setTargetPose(targetPose, false);
+        } else setTargetPose(targetPositions.poll(), false);
     }
 
     public Pose calculateFalseTarget(Pose target) {
-        double cx = localizer.getPoseEstimate().getX(DistanceUnit.CM), cy = localizer.getPoseEstimate().getY(DistanceUnit.CM);
-        double tx = target.getX(DistanceUnit.CM), ty = target.getY(DistanceUnit.CM);
-
-        double dx = tx - cx, dy = ty - cy;
-        double len = Math.hypot(dx, dy);
-
+        Pose currentPose = localizer.getPoseEstimate();
+        Pose difference = target.subtract(currentPose);
+        double len = currentPose.distanceTo(targetPose, DistanceUnit.CM);
+        if (len == 0) return target;
         // unit direction from current -> target
-        double ux = dx / len, uy = dy / len;
+        double ux = difference.getX(DistanceUnit.CM) / len, uy = difference.getY(DistanceUnit.CM) / len;
 
-        double fx = tx + Math.signum(ux) * smoothingDist;
-        double fy = ty + Math.signum(uy) * smoothingDist;
+        double fx = target.getX(DistanceUnit.CM) + ux * smoothingDist;
+        double fy = target.getY(DistanceUnit.CM) + uy * smoothingDist;
         return new Pose(fx, fy, DistanceUnit.CM, target.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
     }
 
@@ -370,13 +430,22 @@ public class SpeediDrive implements Module {
                         robotIsStuck = false;
                     }
                 } else {
-                    if (getPercentageOfTrajectoryDone() >= 96.0) {
+                    if (getPercentageOfTrajectoryDone() >= 90.0) {
                         trajectoryDone = false;
                         robotIsStuck = false;
-                        targetPose = targetPositions.poll();
-                        initialDistance = targetPose != null ? targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM) : 0;
-                        if (targetPositions.isEmpty())
-                            isOnlyTarget = true;
+
+                        do targetPose = targetPositions.poll();
+                        while (targetPose == null && !targetPositions.isEmpty());
+
+                        if (targetPose == null) {
+                            trajectoryDone = true;
+                            robotIsStuck = false;
+                        } else {
+                            falseTargetPose = calculateFalseTarget(targetPose);
+                            initialDistance = targetPose != null ? targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM) : 0;
+                            if (targetPositions.isEmpty() && !goingToNewTargetForAvoidingNoGoZone)
+                                isOnlyTarget = true;
+                        }
                     }
                 }
 
@@ -420,8 +489,10 @@ public class SpeediDrive implements Module {
             case PID:
             case CalibrateSplinePID:
                 Vector err = targetPose.subtract(currentPose).toVec();
-                if (!isOnlyTarget)
+                if (!isOnlyTarget) {
+                    falseTargetPose = calculateFalseTarget(targetPose);
                     err = falseTargetPose.subtract(currentPose).toVec();
+                }
                 err.setHeading(angleWrapper(err.getHeading()));
 
                 if (reachedTarget(10) && reachedHeading(5) && runMode != RunMode.CalibrateSplinePID) {
@@ -612,8 +683,7 @@ public class SpeediDrive implements Module {
             default:
                 if (!disableWarningErrors)
                     throw new IllegalArgumentException("Are you serious you need it in " + unit + " \uD83D\uDE02");
-                else
-                    return 0;
+                else return 0;
         }
     }
 
@@ -703,8 +773,7 @@ public class SpeediDrive implements Module {
         willEnterNoGoZone = false;
         goingToNewTargetForAvoidingNoGoZone = true;
         lastTarget = targetPose;
-        if (customTolerance)
-            lastTolerance = tolerance;
+        if (customTolerance) lastTolerance = tolerance;
         lastShouldWaitToStop = shouldWaitToStop;
         Queue<Pose> targetPoses = findBestCorners(localizer.getPoseEstimate(), targetPose);
         if (targetPoses == null) {
@@ -724,8 +793,7 @@ public class SpeediDrive implements Module {
             timerSinceStart.reset();
             this.tolerance = lastTolerance;
             timerResetFailsafe = false;
-        } else
-            setTargetsList(targetPoses, smoothingDist);
+        } else setTargetsList(targetPoses, smoothingDist);
     }
 
     public Queue<Pose> findBestCorners(Pose start, Pose target) {
@@ -738,14 +806,12 @@ public class SpeediDrive implements Module {
         Pose s = pointInRect(start, left, right, bottom, top) ? clampToOutside(start) : start;
         Pose t = pointInRect(target, left, right, bottom, top) ? clampToOutside(target) : target;
 
-        Pose[] corners = new Pose[]{
-                topLeftCorner, // TL
+        Pose[] corners = new Pose[]{topLeftCorner, // TL
                 topRightCorner, // TR
                 bottomRightCorner, // BR
                 bottomLeftCorner  // BL
         };
-        Pose[] cornersWithTolerance = new Pose[]{
-                topLeftCorner.add(new Pose(-robotWidthInCMs / 2, robotLengthInCMs / 2, DistanceUnit.CM)), // TL
+        Pose[] cornersWithTolerance = new Pose[]{topLeftCorner.add(new Pose(-robotWidthInCMs / 2, robotLengthInCMs / 2, DistanceUnit.CM)), // TL
                 topRightCorner.add(new Pose(robotWidthInCMs / 2, robotLengthInCMs / 2, DistanceUnit.CM)), // TR
                 bottomRightCorner.add(new Pose(robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM)), // BR
                 bottomLeftCorner.add(new Pose(-robotWidthInCMs / 2, -robotLengthInCMs / 2, DistanceUnit.CM))  // BL
@@ -806,8 +872,7 @@ public class SpeediDrive implements Module {
             }
         }
         if (bestCorners.isEmpty()) {
-            if (!disableWarningErrors)
-                throw new RuntimeException("no go zone can not be avoided");
+            if (!disableWarningErrors) throw new RuntimeException("no go zone can not be avoided");
             else return null;
         }
         bestCorners.add(bestCornerWithTolerance);
@@ -851,15 +916,12 @@ public class SpeediDrive implements Module {
     private Pose clampToOutside(Pose a) {
         if (!disableWarningErrors)
             throw new IllegalArgumentException("Target or start is inside no go zone or outside the field");
-        else
-            return a;
+        else return a;
     }
 
     public Pose getLastTarget() {
-        if (goingToNewTargetForAvoidingNoGoZone && willEnterNoGoZone)
-            return lastTarget;
-        else
-            return new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM);
+        if (goingToNewTargetForAvoidingNoGoZone && willEnterNoGoZone) return lastTarget;
+        else return new Pose(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE, DistanceUnit.CM);
     }
 
     Pose eps = new Pose(0.1, -0.1, DistanceUnit.CM);
@@ -914,8 +976,8 @@ public class SpeediDrive implements Module {
     }
 
     public boolean isPoseInsideTheField(Pose target) {
-        return target.getX(DistanceUnit.CM) >= -366 && target.getX(DistanceUnit.CM) <= 366 &&
-                target.getY(DistanceUnit.CM) >= -366 && target.getY(DistanceUnit.CM) <= 366;
+        return  target.getX(DistanceUnit.CM) >= -183 && target.getX(DistanceUnit.CM) <= 183 &&
+                target.getY(DistanceUnit.CM) >= -183 && target.getY(DistanceUnit.CM) <= 183;
     }
 
     public enum RunMode {

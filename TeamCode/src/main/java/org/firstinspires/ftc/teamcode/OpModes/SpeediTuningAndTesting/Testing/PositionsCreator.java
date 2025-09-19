@@ -51,7 +51,7 @@ public class PositionsCreator extends LinearOpMode {
                 telemetry.update();
                 telemetry.addLine("Position saved, wait for the other telemetry to appear and you can continue/stop");
                 telemetry.update();
-                wait(1000);
+                for (int i = 0; i <= 300000; i++) ;
                 telemetry.clearAll();
                 telemetry.update();
             }
@@ -66,7 +66,7 @@ public class PositionsCreator extends LinearOpMode {
         telemetry.update();
         while (opModeIsActive()) {
             for (int i = 0; i < positions.size(); i++) {
-                telemetry.addLine("Pose pose" + (i + 1) + "= new Pose(" + positions.get(i).getX(DistanceUnit.CM) + ", " + positions.get(i).getY(DistanceUnit.CM) + ", DistanceUnit.CM, " + positions.get(i).getHeading(AngleUnit.DEGREES) + ", AngleUnit.DEGREES)\n");
+                telemetry.addLine("Pose pose" + (i + 1) + "= new Pose(" + positions.get(i).getX(DistanceUnit.CM) + ", " + positions.get(i).getY(DistanceUnit.CM) + ", DistanceUnit.CM, " + positions.get(i).getHeading(AngleUnit.DEGREES) + ", AngleUnit.DEGREES);\n");
             }
             telemetry.update();
         }

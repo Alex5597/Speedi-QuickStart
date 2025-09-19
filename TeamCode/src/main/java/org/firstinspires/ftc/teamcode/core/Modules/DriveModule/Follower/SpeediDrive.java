@@ -360,6 +360,13 @@ public class SpeediDrive implements Module {
         }
     }
 
+    /**
+     * @param targetPositions   the list of targets that the robot will go to in order that they are given
+     * @param smoothingDistance the distance used to accelerate to a target for not stopping between each one (before the final one which is always accurate)
+     *                          the higher this is the more the robot will drift after switching to another target
+     *                          the lower this is the slower it will switch between targets(it will stop in the corner, then continue to the next one/to the final target)
+     *                                                   TODO test with different smoothingDistances before sticking to one you like
+     */
     public void setTargetsList(Queue<Pose> targetPositions, double smoothingDistance) {
         this.targetPositions.clear();
         this.smoothingDist = smoothingDistance;
@@ -388,6 +395,7 @@ public class SpeediDrive implements Module {
         // unit direction from current -> target
         double ux = difference.getX(DistanceUnit.CM) / len, uy = difference.getY(DistanceUnit.CM) / len;
 
+        smoothingDist = Range.clip(smoothingDist, 0, Double.MAX_VALUE);
         double fx = target.getX(DistanceUnit.CM) + ux * smoothingDist;
         double fy = target.getY(DistanceUnit.CM) + uy * smoothingDist;
         return new Pose(fx, fy, DistanceUnit.CM, target.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
@@ -743,6 +751,13 @@ public class SpeediDrive implements Module {
         return 0.5 * Math.tan(1.12 * value);
     }
 
+    /**
+     * @param topLeftCorner                         the top left corner of the defined zone
+     * @param bottomRightCorner                     the bottom right corner of the defined zone
+     * @param smoothingDistanceInCaseAvoidingNeeded the distance used to accelerate to a corner for not stopping between them (if necessary)
+     *                                              the higher this is the more the robot will drift after switching to another target
+     *                                              the lower this is the slower it will switch between corners(it will stop in the corner, then continue to the next one/to the final target)
+     */
     public void setNoGoZone(Pose topLeftCorner, Pose bottomRightCorner, double smoothingDistanceInCaseAvoidingNeeded) {
         this.smoothingDist = smoothingDistanceInCaseAvoidingNeeded;
         this.topLeftCorner = topLeftCorner;
@@ -976,7 +991,7 @@ public class SpeediDrive implements Module {
     }
 
     public boolean isPoseInsideTheField(Pose target) {
-        return  target.getX(DistanceUnit.CM) >= -183 && target.getX(DistanceUnit.CM) <= 183 &&
+        return target.getX(DistanceUnit.CM) >= -183 && target.getX(DistanceUnit.CM) <= 183 &&
                 target.getY(DistanceUnit.CM) >= -183 && target.getY(DistanceUnit.CM) <= 183;
     }
 

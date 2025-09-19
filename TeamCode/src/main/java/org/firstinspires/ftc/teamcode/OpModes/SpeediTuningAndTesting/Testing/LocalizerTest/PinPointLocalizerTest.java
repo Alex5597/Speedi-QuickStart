@@ -29,7 +29,7 @@ public class PinPointLocalizerTest extends LinearOpMode {
                 localizer.resetPosition(new Pose());
                 drive.resetPosition(new Pose());
             }
-            drive.motors.driveFieldCentric(gamepad1, 0);
+            drive.driveFieldCentric(gamepad1, 0);
 
             telemetry.addData("Predicted pos", localizer.getPredictedPoseEstimate());
             telemetry.addData("Pos actuala", localizer.getPoseEstimate());

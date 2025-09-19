@@ -145,43 +145,6 @@ public class MecanumChassis implements Module {
         motors.get(2).setPowerForced(frontRightPower);
         motors.get(3).setPowerForced(backRightPower);
     }
-
-    public void drive(Gamepad gamepad) {
-        resetMinPowersToOvercomeFriction();
-
-        double forward = -gamepad.left_stick_y * driveMultiplier;
-        double strafe = gamepad.left_stick_x * driveMultiplier;
-        double turn = gamepad.right_stick_x * driveMultiplier;
-
-        Vector drive = new Vector(strafe, forward, turn);
-        if (drive.getMagnitude() <= 0.05) {
-            drive.scalarMultiply(0);
-        }
-
-        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
-        setMotorPowerForced(drive);
-    }
-
-    public void driveFieldCentric(Gamepad gamepad, double angle) {
-        resetMinPowersToOvercomeFriction();
-
-        double forward = (-gamepad.left_stick_y * driveMultiplier);
-        double strafe = (gamepad.left_stick_x * driveMultiplier);
-        double turn = (gamepad.right_stick_x * driveMultiplier);
-
-        Vector drive = new Vector(strafe, forward, turn).rotate(angle);
-        if (drive.getMagnitude() <= 0.05) {
-            drive.scalarMultiply(0);
-        }
-
-        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
-        setMotorPowerForced(drive);
-    }
-
-    public double smoothControls(double value) {
-        return 0.5 * Math.tan(1.12 * value);
-    }
-
     public void resetMinPowersToOvercomeFriction() {
         if (motors.get(0).getMinimumPowerToOvercomeKineticFriction() == 0.0)
             return;

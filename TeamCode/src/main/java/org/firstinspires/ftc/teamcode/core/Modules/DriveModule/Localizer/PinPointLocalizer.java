@@ -2,8 +2,8 @@ package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinPointName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.xDeceleration;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.lateralDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.forwardDeceleration;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.parYEncoderLateralDistanceToCenterOfRotation;
@@ -80,7 +80,7 @@ public class PinPointLocalizer implements Localizer {
     @Override
     public void update() {
         if (shouldUsePhysicalBraking)
-            if (xDeceleration == 0 || yDeceleration == 0)
+            if (lateralDeceleration == 0 || forwardDeceleration == 0)
                 throw new RuntimeException("Change xDeceleration and yDeceleration from 0");
         if (firstLoop) {
             velocityAdapter = new VelocityAdapter();
@@ -97,8 +97,8 @@ public class PinPointLocalizer implements Localizer {
         Vector velocity = velocityAdapter.getVelocity(currentPosition);
         velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()), velocity.getHeading());
         glideVector = new Vector(
-                Math.signum(velocityVectorRaw.getX()) * velocityVectorRaw.getX() * velocityVectorRaw.getX() / (2.0 * xDeceleration),
-                Math.signum(velocityVectorRaw.getY()) * velocityVectorRaw.getY() * velocityVectorRaw.getY() / (2.0 * yDeceleration),
+                Math.signum(velocityVectorRaw.getX()) * velocityVectorRaw.getX() * velocityVectorRaw.getX() / (2.0 * lateralDeceleration),
+                Math.signum(velocityVectorRaw.getY()) * velocityVectorRaw.getY() * velocityVectorRaw.getY() / (2.0 * forwardDeceleration),
                 0);
         predictedPose = currentPosition.add(glideVector.toPose());
 
@@ -112,8 +112,8 @@ public class PinPointLocalizer implements Localizer {
             currentPosition = lastPosition;
         if (glideVector.isNaN())
             glideVector = new Vector(
-                    Math.signum(lastVelocityVector.getX()) * lastVelocityVector.getX() * lastVelocityVector.getX() / (2.0 * xDeceleration),
-                    Math.signum(lastVelocityVector.getY()) * lastVelocityVector.getY() * lastVelocityVector.getY() / (2.0 * yDeceleration),
+                    Math.signum(lastVelocityVector.getX()) * lastVelocityVector.getX() * lastVelocityVector.getX() / (2.0 * lateralDeceleration),
+                    Math.signum(lastVelocityVector.getY()) * lastVelocityVector.getY() * lastVelocityVector.getY() / (2.0 * forwardDeceleration),
                     0);
         if (!velocityVectorRaw.isNaN())
             lastVelocityVector = velocityVectorRaw;
@@ -147,7 +147,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.toPose2D());
+        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
 
         velocityAdapter = new VelocityAdapter();
         xVelocityFilter.resetFilter(0);

@@ -45,7 +45,7 @@ public class SplinePIDTuner extends LinearOpMode {
                         state = State.AUTO;
                         traj = 0;
                     }
-                    drive.motors.drive(gamepad1);
+                    drive.drive(gamepad1);
                     drive.update();
                     drive.currentPosTelemetry(true);
                     drive.PinPointErrorTelemetry(false);

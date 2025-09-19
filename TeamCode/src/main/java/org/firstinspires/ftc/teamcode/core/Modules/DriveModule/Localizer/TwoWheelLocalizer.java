@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.xDeceleration;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.yDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.lateralDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.forwardDeceleration;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.logoFacingDirection;
@@ -130,8 +130,8 @@ public class TwoWheelLocalizer implements Localizer {
         velocity = new Vector(yVelocityFilter.getValue(-dyVelocity), xVelocityFilter.getValue(dxVelocity));
         Vector driveTrainvelocity = velocity.rotate(0); //E acelasi lucru cu driveTrainVelocity = velocity, dar asa e corect dpdv geometric
         velocityVector = new Vector(
-                Math.signum(driveTrainvelocity.getX()) * driveTrainvelocity.getX() * driveTrainvelocity.getX() / (5.08 * xDeceleration),
-                Math.signum(driveTrainvelocity.getY()) * driveTrainvelocity.getY() * driveTrainvelocity.getY() / (5.08 * yDeceleration),
+                Math.signum(driveTrainvelocity.getX()) * driveTrainvelocity.getX() * driveTrainvelocity.getX() / (5.08 * lateralDeceleration),
+                Math.signum(driveTrainvelocity.getY()) * driveTrainvelocity.getY() * driveTrainvelocity.getY() / (5.08 * forwardDeceleration),
                 0);
         //velocityVector = velocityVector.rotate(-currentPosition.getHeading());
         predictedPose = currentPosition.add(velocityVector.toPose());

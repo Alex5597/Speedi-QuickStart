@@ -40,7 +40,6 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.PIDCoefficients;
 
 import org.firstinspires.ftc.teamcode.core.Util.Hardware.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 
 @Config
 public class Constants {
@@ -69,8 +68,8 @@ public class Constants {
     @Config
     public static class GoToPointConstants {
         public static boolean shouldUsePhysicalBraking = true;//TODO IF THIS IS TRUE DO NOT ADD kD TO THE tPIDCoeff_GoToPoint AND ADJUST (xDeceleration and yDeceleration) INSTEAD
-        public static double xDeceleration = 247.58438571923446;
-        public static double yDeceleration = 270.13739836707487; //Deceleration for velocity-based stopping
+        public static double lateralDeceleration = 247.58438571923446;
+        public static double forwardDeceleration = 270.13739836707487; //Deceleration for velocity-based stopping
 
 
         public static PIDCoefficients

@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Chassis.MecanumChassis;
+import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.TwoWheelLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 
@@ -14,13 +15,13 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 @TeleOp
 public class TestPredictedPose extends LinearOpMode {
     TwoWheelLocalizer localizer;
-    MecanumChassis chassis;
+    SpeediDrive chassis;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         localizer = new TwoWheelLocalizer(hardwareMap, new Pose(), telemetry);
-        chassis = new MecanumChassis(hardwareMap, false);
+        chassis = new SpeediDrive(hardwareMap, new Pose(), telemetry,true);
         waitForStart();
 
         while (opModeIsActive()) {

@@ -112,7 +112,6 @@ public class SpeediDrive implements Module {
 
         tPid.reset();
         hPid.reset();
-
     }
 
     public SpeediDrive(HardwareMap hardwareMap, Pose startPose, Telemetry telemetry, boolean brake, boolean isAuto) {
@@ -129,7 +128,6 @@ public class SpeediDrive implements Module {
 
         tPid.reset();
         hPid.reset();
-
     }
 
     public RunMode getRunMode() {
@@ -365,7 +363,7 @@ public class SpeediDrive implements Module {
      * @param smoothingDistance the distance used to accelerate to a target for not stopping between each one (before the final one which is always accurate)
      *                          the higher this is the more the robot will drift after switching to another target
      *                          the lower this is the slower it will switch between targets(it will stop in the corner, then continue to the next one/to the final target)
-     *                                                   TODO test with different smoothingDistances before sticking to one you like
+     *                                                                                                     TODO test with different smoothingDistances before sticking to one you like
      */
     public void setTargetsList(Queue<Pose> targetPositions, double smoothingDistance) {
         this.targetPositions.clear();
@@ -411,6 +409,10 @@ public class SpeediDrive implements Module {
      */
     public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
         setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(-getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
+    }
+
+    public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
+        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(-getCurrentPos().getHeading(AngleUnit.RADIANS))), tolerance, shouldWaitToStopCompletelyAtTheEndOfTrajectory);
     }
 
     public boolean stopped() {

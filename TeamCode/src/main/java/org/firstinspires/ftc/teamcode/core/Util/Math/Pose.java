@@ -52,7 +52,8 @@ public class Pose {
     }
 
     public Pose(AprilTagPoseFtc ftcPose, DistanceUnit distanceUnit, AngleUnit angleUnit) {
-        this(ftcPose.x * Math.cos(-ftcPose.yaw) - ftcPose.y * Math.sin(-ftcPose.yaw), ftcPose.x * Math.sin(-ftcPose.yaw) + ftcPose.y * Math.cos(-ftcPose.yaw), distanceUnit, -ftcPose.yaw, angleUnit);
+        this(ftcPose.x * Math.cos(-ftcPose.yaw) - ftcPose.y * Math.sin(-ftcPose.yaw),
+                ftcPose.x * Math.sin(-ftcPose.yaw) + ftcPose.y * Math.cos(-ftcPose.yaw), distanceUnit, -ftcPose.yaw, angleUnit);
     }
 
     public Pose(Pose2D pose) {
@@ -152,6 +153,7 @@ public class Pose {
 
     public void changeSideOfTheField() {
         this.x = -this.x;
+        this.heading = angleWrapper(this.heading + Math.PI);
     }
 
     public String toString() {

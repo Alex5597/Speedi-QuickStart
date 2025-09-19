@@ -54,11 +54,15 @@ public class Constants {
         public static boolean shouldReverseForwardEncoder = true;
         public static final double cmPerTickForward = 1.00 / (19.89436789f / 10); //TODO ADJUST THIS FOR PinpointLocalizer in case you use anything else than goBilda encoders
         public static final double cmPerTickLateral = 1.00 / (19.89436789f / 10);
+
+
         //TODO For classic TwoWheelLocalizer:
         public static double perpXTicks = 0.0; // x position of the perpendicular encoder (in tick units)
         public static double parYTicks = 0.0; // y position of the parallel encoder (in tick units)
         public static RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection = RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
         public static RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+
+
         //TODO For PinPointLocalizer:
         public static GoBildaPinpointDriver.GoBildaOdometryPods typeOfEncoders = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD;
         public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm

@@ -16,6 +16,12 @@ public interface Localizer {
     void resetPosition(Pose startPose);
 
     void updateOnlyImu();
+
     Vector getGlideVector();
+
     Vector getRawVelocity();
+
+    double getParallelEncPosRaw();
+
+    double getPerpendicularEncPosRaw();
 }

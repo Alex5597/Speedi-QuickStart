@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.core.Util.Algorithm.SplineGenerator;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
 
 import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
-import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,11 +80,22 @@ public class BezierSpline implements Spline {
         int segmentCount = curves.size();
         double segmentLength = 1.0 / segmentCount;
         int segmentIndex = Math.min((int) (t / segmentLength), segmentCount - 1);
-        targetAngle = curves.get(segmentIndex).getTargetAngle();
+        if (targetAngle == Double.POSITIVE_INFINITY)
+            targetAngle = curves.get(segmentIndex).getTargetAngle();
         if (targetAngle == Double.POSITIVE_INFINITY)
             return firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading() + firstAngle;
         else
             return targetAngle;
+    }
+
+    @Override
+    public double getTargetAngle() {
+        return targetAngle;
+    }
+
+    @Override
+    public void setTargetHeading(double angle) {
+        targetAngle = angle;
     }
 
     public double curvatureOfThePath(double t) {

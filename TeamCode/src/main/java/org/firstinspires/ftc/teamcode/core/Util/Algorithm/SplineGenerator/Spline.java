@@ -20,6 +20,8 @@ public interface Spline {
     double findClosestPoint(Vector position);
 
     void setFirstHeading(double angle);
+    void setTargetHeading(double angle);
+    double getTargetAngle();
 
     boolean isClockWiseCurvature(double lastT, double currenT, Vector velocity);
 

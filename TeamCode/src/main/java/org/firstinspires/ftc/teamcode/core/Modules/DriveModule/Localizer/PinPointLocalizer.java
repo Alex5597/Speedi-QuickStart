@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.pinPointName;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.lateralDeceleration;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.forwardDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.lateralDeceleration;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.parYEncoderLateralDistanceToCenterOfRotation;
@@ -29,8 +29,6 @@ public class PinPointLocalizer implements Localizer {
     public GoBildaPinpointDriver odo;
     Telemetry telemetry;
     Pose currentPosition, predictedPose, lastPosition;
-    double lastRawHeadingVel = 0, headingVelOffset = 0;
-    double headingVel = 0;
     Vector velocityVectorRaw = new Vector(0, 0, 0);
     Vector glideVector = new Vector(0, 0, 0), lastVelocityVector = new Vector(0, 0, 0);
     LowPassFilter xVelocityFilter = new LowPassFilter(0.8, 0), yVelocityFilter = new LowPassFilter(0.8, 0);
@@ -170,6 +168,16 @@ public class PinPointLocalizer implements Localizer {
     @Override
     public Vector getRawVelocity() {
         return new Vector(odo.getVelX() * 10.0 / cmPerTickForward, odo.getVelY() * 10.0 / cmPerTickLateral); //Ticks/s
+    }
+
+    @Override
+    public double getParallelEncPosRaw() {
+        return odo.getEncoderX();
+    }
+
+    @Override
+    public double getPerpendicularEncPosRaw() {
+        return odo.getEncoderY();
     }
 
     private double angleWrapper(double angle) {

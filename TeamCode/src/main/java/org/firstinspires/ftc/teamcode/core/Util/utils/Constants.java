@@ -65,8 +65,8 @@ public class Constants {
 
         //TODO For PinPointLocalizer:
         public static GoBildaPinpointDriver.GoBildaOdometryPods typeOfEncoders = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD;
-        public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mm
-        public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mm
+        public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mms
+        public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mms
     }
 
     @Config
@@ -77,7 +77,7 @@ public class Constants {
 
 
         public static PIDCoefficients
-                tPIDCoeff_GoToPoint = new PIDCoefficients(0.1, 0, 0.0),
+                tPIDCoeff_GoToPoint = new PIDCoefficients(0.13, 0, 0.0),
                 hPIDCoeff_GoToPoint = new PIDCoefficients(1, 0, 0.005);
 
         public static boolean useFinalAdj = true;
@@ -130,13 +130,13 @@ public class Constants {
 
     @Config
     public static class FollowerConstants {
-        public final static int resolution = 500;
+        public final static int resolution = 1000;
         public static double TotalMassOfRobot = 9.5; //In KG
-        public static double CentripetalScalingFactor = 0.00037;
+        public static double CentripetalScalingFactor = 0.00032;
         public static boolean shouldBrake = true;
         public static PIDCoefficients
-                tPIDCoeff_SplineFollower = new PIDCoefficients(0.15, 0, 0.001),
-                hPIDCoeff_SplineFollower = new PIDCoefficients(1, 0, 0.005);
+                tPIDCoeff_SplineFollower = new PIDCoefficients(0.11, 0, 0.001),
+                hPIDCoeff_SplineFollower = new PIDCoefficients(0.5, 0, 0.001);
     }
 
     public static final double WAIT_TIME_VARIABLE = 99999999.991; //IGNORA

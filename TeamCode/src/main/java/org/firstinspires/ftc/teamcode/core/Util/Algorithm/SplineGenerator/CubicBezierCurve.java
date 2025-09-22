@@ -105,8 +105,14 @@ public class CubicBezierCurve implements Spline {
             return targetAngle;
     }
 
+    @Override
     public double getTargetAngle() {
         return targetAngle;
+    }
+
+    @Override
+    public void setTargetHeading(double angle) {
+        targetAngle = angle;
     }
 
     public double curvatureOfThePath(double t) {

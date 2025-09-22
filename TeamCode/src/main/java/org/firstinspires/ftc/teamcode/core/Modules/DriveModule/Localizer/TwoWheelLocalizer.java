@@ -199,8 +199,16 @@ public class TwoWheelLocalizer implements Localizer {
     public double getInitialHeading() {
         return startAngle;
     }
-
-
+    @Override
+    public double getParallelEncPosRaw()
+    {
+        return par.getCurrentPosition();
+    }
+    @Override
+    public double getPerpendicularEncPosRaw()
+    {
+        return perp.getCurrentPosition();
+    }
     private double angleWrapper(double angle) {
         if (angle > Math.PI) angle -= 2.0 * Math.PI;
         if (angle < -Math.PI) angle += 2.0 * Math.PI;

@@ -15,7 +15,6 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumCh
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -94,7 +93,7 @@ public class MecanumChassis implements Module {
             motors.get(i).setPowerForced(wheelSpeeds[i]);
     }
 
-    public void setMotorPower(Vector input) {
+    public void setMotorPowerSmooth(Vector input) {
         wheelSpeeds[0] = input.getY() + input.getX() + input.getHeading();//LEFT FRONT
         wheelSpeeds[1] = input.getY() - input.getX() + input.getHeading();//LEFT BACK
         wheelSpeeds[2] = input.getY() - input.getX() - input.getHeading();//RIGHT FRONT
@@ -113,6 +112,26 @@ public class MecanumChassis implements Module {
 
         for (int i = 0; i < 4; i++)
             motors.get(i).setTargetPowerSmooth(wheelSpeeds[i]);
+    }
+    public void setMotorPower(Vector input) {
+        wheelSpeeds[0] = input.getY() + input.getX() + input.getHeading();//LEFT FRONT
+        wheelSpeeds[1] = input.getY() - input.getX() + input.getHeading();//LEFT BACK
+        wheelSpeeds[2] = input.getY() - input.getX() - input.getHeading();//RIGHT FRONT
+        wheelSpeeds[3] = input.getY() + input.getX() - input.getHeading();//RIGHT BACK
+
+        double max = 1;
+        for (double wheelSpeed : wheelSpeeds)
+            max = Math.max(max, Math.abs(wheelSpeed));
+
+        if (max > maxPower) {
+            wheelSpeeds[0] = (wheelSpeeds[0] / max) * maxPower;
+            wheelSpeeds[1] = (wheelSpeeds[1] / max) * maxPower;
+            wheelSpeeds[2] = (wheelSpeeds[2] / max) * maxPower;
+            wheelSpeeds[3] = (wheelSpeeds[3] / max) * maxPower;
+        }
+
+        for (int i = 0; i < 4; i++)
+            motors.get(i).setTargetPower(wheelSpeeds[i]);
     }
 
     public void setMotorPower(Vector[] truePathingVectors) {
@@ -136,7 +155,7 @@ public class MecanumChassis implements Module {
         }
 
         for (int i = 0; i < 4; i++)
-            motors.get(i).setTargetPower(wheelSpeeds[i]);//TODO ai schimbat cv aici
+            motors.get(i).setTargetPower(wheelSpeeds[i]);
     }
 
     public void setMotorPower(double frontLeftPower, double backLeftPower, double frontRightPower, double backRightPower) {

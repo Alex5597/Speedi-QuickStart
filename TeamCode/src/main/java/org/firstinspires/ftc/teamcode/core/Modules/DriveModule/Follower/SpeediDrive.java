@@ -15,6 +15,7 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumCh
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.forwardMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.headingMultiplier;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.lateralMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.resetMultipliers;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.disableWarningErrors;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.robotLengthInCMs;
@@ -142,6 +143,9 @@ public class SpeediDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
+        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
+        if (trajectory.getTargetAngle() == Double.POSITIVE_INFINITY)
+            trajectory.setTargetHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
         follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
@@ -162,6 +166,9 @@ public class SpeediDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
+        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
+        if (trajectory.getTargetAngle() == Double.POSITIVE_INFINITY)
+            trajectory.setTargetHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
         follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
@@ -176,11 +183,27 @@ public class SpeediDrive implements Module {
         this.runMode = RunMode.Spline;
         this.curve = trajectory;
         localizer.update();
+        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
         follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
         robotIsStuck = false;
         startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
+        trajectoryDone = false;
+        timerSinceStart.reset();
+        timerResetFailsafe = false;
+    }
+
+    public void setSpline_withTangentialHeadingChange(Spline trajectory, double startAngleOfTrajInDegrees) {
+        this.runMode = RunMode.Spline;
+        this.curve = trajectory;
+        localizer.update();
+        trajectory.setFirstHeading(Math.toRadians(startAngleOfTrajInDegrees));
+        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
+        targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
+        falseTargetPose = targetPose;
+        robotIsStuck = false;
+        startAngleTraj = Math.toRadians(startAngleOfTrajInDegrees);
         trajectoryDone = false;
         timerSinceStart.reset();
         timerResetFailsafe = false;
@@ -363,7 +386,7 @@ public class SpeediDrive implements Module {
      * @param smoothingDistance the distance used to accelerate to a target for not stopping between each one (before the final one which is always accurate)
      *                          the higher this is the more the robot will drift after switching to another target
      *                          the lower this is the slower it will switch between targets(it will stop in the corner, then continue to the next one/to the final target)
-     *                                                                                                     TODO test with different smoothingDistances before sticking to one you like
+     *                                                                                                                                                                                                                                                                                                             TODO test with different smoothingDistances before sticking to one you like
      */
     public void setTargetsList(Queue<Pose> targetPositions, double smoothingDistance) {
         this.targetPositions.clear();
@@ -385,7 +408,7 @@ public class SpeediDrive implements Module {
         } else setTargetPose(targetPositions.poll(), false);
     }
 
-    public Pose calculateFalseTarget(Pose target) {
+    private Pose calculateFalseTarget(Pose target) {
         Pose currentPose = localizer.getPoseEstimate();
         Pose difference = target.subtract(currentPose);
         double len = currentPose.distanceTo(targetPose, DistanceUnit.CM);
@@ -429,7 +452,7 @@ public class SpeediDrive implements Module {
                 DrawRobot.drawDebug(this);
             }
             if (runMode != RunMode.MANUAL) {
-                if (isOnlyTarget) {
+                if (isOnlyTarget || runMode == RunMode.Spline) {
                     if (!customTolerance) {
                         if (reachedTarget(3) && reachedHeading(3) && stopped()) {
                             trajectoryDone = true;
@@ -524,7 +547,7 @@ public class SpeediDrive implements Module {
                         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
                         hPid.setPIDF(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d, 0);
                     } else {
-                        motors.setMinPowersToOvercomeFriction();
+                        motors.resetMinPowersToOvercomeFriction();
                         tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
                         hPid.setPID(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
                     }
@@ -540,18 +563,23 @@ public class SpeediDrive implements Module {
                 double headingPower = -hPid.calculate(-headingDiff, 0);
                 powerVector.setHeading(headingPower);
                 powerVector = powerVector.rotate(currentPose.getHeading(AngleUnit.RADIANS)).scaleToMagnitude_AngularAsWell(1);
-                if (runMode != RunMode.CalibrateSplinePID)
-                    powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
+                powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);
 
-                motors.setMotorPower(powerVector);
+                 motors.setMotorPowerSmooth(powerVector);
+                //motors.setMotorPower(powerVector);
                 break;
             case Spline:
+                motors.resetMinPowersToOvercomeFriction();
                 Vector followerPower = follower.getMotorPower(currentPose, localizer.getVelocity(), localizer.getGlideVector());
                 if (!followerPower.isNaN()) {
                     if (!followerPower.equals(new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE))) {
                         powerVector = followerPower.rotate(currentPose.getHeading(AngleUnit.RADIANS));
+                        powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, powerVector.getHeading() * headingMultiplier);
                         motors.setMotorPower(powerVector);
-                    } else updateTargetPose(targetPose, false);
+                    } else {
+                        resetMultipliers();
+                        updateTargetPose(targetPose, false);
+                    }
                 }
                 break;
             case MANUAL:

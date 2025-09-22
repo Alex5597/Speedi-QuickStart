@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower;
 
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.hPIDCoeff_SplineFollower;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.tPIDCoeff_SplineFollower;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.resolution;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.shouldBrake;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.FollowerConstants.tPIDCoeff_SplineFollower;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.headingMultiplier;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.resetMultipliers;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.WAIT_TIME_VARIABLE;
 
 import androidx.annotation.NonNull;
@@ -28,19 +30,19 @@ public class SplineFollower {
     Telemetry telemetry;
     double lastT = 0, currentT = 0;
     Vector finalPoint;
-    boolean goToPoint, instantHeading;
-    double tLerp = 0;
-    boolean tangential = false;
+    boolean goToPoint;
+    double tLerp = -1;
+    boolean tangential = false, instantHeading = true;
 
     public SplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
         this.instantHeading = true;
+        this.tangential = false;
 
         telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(startPose.getHeading(AngleUnit.RADIANS));
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -58,12 +60,12 @@ public class SplineFollower {
         this.telemetry = telemetry;
 
         this.instantHeading = false;
+        this.tangential = false;
         tLerp = rateOfChange;
 
         telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
-        trajectory.setFirstHeading(startPose.getHeading(AngleUnit.RADIANS));
 
         //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
         //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
@@ -109,14 +111,18 @@ public class SplineFollower {
         lastT = currentT;
         Vector currTargetPoint = trajectory.calculate(currentT + 1.0 / resolution);
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT + 1.0 / resolution));
-        if (tangential)
+        if (instantHeading)
+            headingMultiplier = 4;
+        else if (tangential) {
+            headingMultiplier = 10;
             targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution), AngleUnit.RADIANS);
-        else if (!instantHeading)
+        } else if (tLerp != -1)
             targetPose.setHeading(hlerp(robotPose.getHeading(AngleUnit.RADIANS), trajectory.heading(currentT + 1.0 / resolution), tLerp), AngleUnit.RADIANS);
 
         // Check for final adjustment
-        if (currentT >= 0.9 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= glideVector.getMagnitude() && shouldBrake) {
+        if (currentT >= 0.95 && trajectory.getLength() - trajectory.getLengthAt(currentT) <= glideVector.getMagnitude() && shouldBrake) {
             goToPoint = true;
+            resetMultipliers();
             telemetry.addLine("GoToPoint activated");
             telemetry.update();
             return new Vector(WAIT_TIME_VARIABLE, WAIT_TIME_VARIABLE);

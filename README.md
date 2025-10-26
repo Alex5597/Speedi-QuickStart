@@ -1,1 +1,1 @@
-SPEEDI
+SPEEDI is a smart pathing algorithm designed for FTC, that either follows a defined Bezier Spline or goes straight to a defined point. It has two localizers, one for GoBildaPinpoint and one for Two Odometry Wheels.

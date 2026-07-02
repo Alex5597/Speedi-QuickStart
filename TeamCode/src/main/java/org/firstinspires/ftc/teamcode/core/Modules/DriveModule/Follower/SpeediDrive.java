@@ -49,8 +49,8 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 public class SpeediDrive implements Module {
-    private static final SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
-    private static final PIDController hPid = new PIDController(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
+    private final SquidController tPid = new SquidController(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
+    private final PIDController hPid = new PIDController(hPIDCoeff_GoToPoint.p, hPIDCoeff_GoToPoint.i, hPIDCoeff_GoToPoint.d);
     public PinPointLocalizer localizer;
     public MecanumChassis motors;
     public boolean robotIsStuck = false;
@@ -458,7 +458,7 @@ public class SpeediDrive implements Module {
                             trajectoryDone = true;
                             robotIsStuck = false;
                         }
-                    } else if (getXError(DistanceUnit.CM) <= tolerance.getX(DistanceUnit.CM) && getYError(DistanceUnit.CM) <= tolerance.getY(DistanceUnit.CM) && reachedHeading(tolerance.getHeading(AngleUnit.RADIANS)) && stopped()) {
+                    } else if (getXError(DistanceUnit.CM) <= tolerance.getX(DistanceUnit.CM) && getYError(DistanceUnit.CM) <= tolerance.getY(DistanceUnit.CM) && reachedHeading(tolerance.getHeading(AngleUnit.DEGREES)) && stopped()) {
                         trajectoryDone = true;
                         robotIsStuck = false;
                     }
@@ -541,7 +541,7 @@ public class SpeediDrive implements Module {
                 } else {
                     if (getXError(DistanceUnit.CM) <= 3) lateralMultiplier = Lateral;
                     if (getYError(DistanceUnit.CM) <= 3) forwardMultiplier = Forward;
-                    if (angleWrapper(err.getHeading()) <= Math.toRadians(3))
+                    if (Math.abs(angleWrapper(err.getHeading())) <= Math.toRadians(3))
                         headingMultiplier = Heading;
                     if (runMode != RunMode.CalibrateSplinePID) {
                         tPid.setPIDF(tPIDCoeff_GoToPoint.p, tPIDCoeff_GoToPoint.i, tPIDCoeff_GoToPoint.d, 0);
@@ -554,10 +554,14 @@ public class SpeediDrive implements Module {
                 }
 
                 double distance = Math.hypot(err.getX(), err.getY());
-                double calculatedCos = err.getX() / distance;
-                double calculatedSin = err.getY() / distance;
-                double translationalPower = tPid.calculate(-distance, 0);
-                powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin);
+                if (distance <= 1e-6) {
+                    powerVector = new Vector(0, 0);
+                } else {
+                    double calculatedCos = err.getX() / distance;
+                    double calculatedSin = err.getY() / distance;
+                    double translationalPower = tPid.calculate(-distance, 0);
+                    powerVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin);
+                }
 
                 double headingDiff = angleWrapper(err.getHeading());
                 double headingPower = -hPid.calculate(-headingDiff, 0);
@@ -627,14 +631,14 @@ public class SpeediDrive implements Module {
     }
 
     private void checkIfRobotIsStuck() {
-        if (timerSinceStart.milliseconds() >= 1000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && localizer.getVelocity().getHeading() <= 2 && !timerResetFailsafe) {
+        if (timerSinceStart.milliseconds() >= 1000 && localizer.getVelocity().getMagnitude() <= velocityThreshold && Math.abs(localizer.getVelocity().getHeading()) <= 2 && !timerResetFailsafe) {
             timerResetFailsafe = true;
             failsafeTimer.reset();
         }
         if (timerResetFailsafe && failsafeTimer.milliseconds() >= 300) {
             timerResetFailsafe = false;
             localizer.update();
-            if (localizer.getVelocity().getHeading() <= 2 && localizer.getVelocity().getMagnitude() <= velocityThreshold) {
+            if (Math.abs(localizer.getVelocity().getHeading()) <= 2 && localizer.getVelocity().getMagnitude() <= velocityThreshold) {
                 robotIsStuck = true;
             }
         }
@@ -935,7 +939,7 @@ public class SpeediDrive implements Module {
 
 
     public double getError(DistanceUnit distanceUnit) {
-        Pose err = targetPose.add(getCurrentPos());
+        Pose err = targetPose.subtract(getCurrentPos());
         return Math.hypot(err.getX(distanceUnit), err.getY(distanceUnit));
     }
 

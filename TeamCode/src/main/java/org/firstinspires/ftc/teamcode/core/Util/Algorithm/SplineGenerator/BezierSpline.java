@@ -80,12 +80,12 @@ public class BezierSpline implements Spline {
         int segmentCount = curves.size();
         double segmentLength = 1.0 / segmentCount;
         int segmentIndex = Math.min((int) (t / segmentLength), segmentCount - 1);
-        if (targetAngle == Double.POSITIVE_INFINITY)
-            targetAngle = curves.get(segmentIndex).getTargetAngle();
-        if (targetAngle == Double.POSITIVE_INFINITY)
-            return firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading() + firstAngle;
-        else
+        double segmentTargetAngle = curves.get(segmentIndex).getTargetAngle();
+        if (targetAngle != Double.POSITIVE_INFINITY)
             return targetAngle;
+        if (segmentTargetAngle != Double.POSITIVE_INFINITY)
+            return segmentTargetAngle;
+        return firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading() + firstAngle;
     }
 
     @Override
@@ -163,20 +163,20 @@ public class BezierSpline implements Spline {
 
     @Override
     public double getLengthAt(double t) {
-        int index = (int) (t * resolution);
-        index = Math.min(resolution - 1, Math.max(0, index));
-
-        // Calculate the fractional part of t * resolution for accurate interpolation
-        double fractionalPart = t * resolution - index;
-
-        // Interpolate between the length at index and index + 1
-        double nextIndexLength = lengthArray.get(Math.min(resolution - 1, index + 1));
+        t = Math.max(0, Math.min(1, t));
+        double scaledIndex = t * resolution;
+        int index = (int) Math.floor(scaledIndex);
+        if (index >= lengthArray.size() - 1) return lengthArray.get(lengthArray.size() - 1);
+        double fractionalPart = scaledIndex - index;
+        double nextIndexLength = lengthArray.get(index + 1);
         double currentIndexLength = lengthArray.get(index);
 
         return currentIndexLength + (nextIndexLength - currentIndexLength) * fractionalPart;
     }
 
     private void computeLength() {
+        lengthArray.clear();
+        length = 0;
         double dt = 1.0 / (double) resolution;
         for (double d = 0; d <= 1; d += dt) {
             Vector currentPoint = calculate(d);
@@ -184,7 +184,7 @@ public class BezierSpline implements Spline {
             dashboardDrawingPoints[0][(int) (d * resolution)] = currentPoint.getY() / 2.54;
 
             lengthArray.add(length);
-            length += calculate(d).getMagnitude() * dt;
+            length += firstDerivative(d).getMagnitude() * dt;
         }
     }
 

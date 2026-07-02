@@ -25,8 +25,8 @@ import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 @Config
 public class SplineFollower {
     public Spline trajectory;
-    public static PIDController tPid = new PIDController(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d);
-    public static PIDController hPid = new PIDController(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
+    private final PIDController tPid = new PIDController(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d);
+    private final PIDController hPid = new PIDController(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
     Telemetry telemetry;
     double lastT = 0, currentT = 0;
     Vector finalPoint;
@@ -135,10 +135,15 @@ public class SplineFollower {
         Pose err = targetPose.subtract(robotPose);
         double distance = Math.hypot(err.getX(DistanceUnit.CM), err.getY(DistanceUnit.CM));
 
-        double calculatedCos = err.getX(DistanceUnit.CM) / distance;
-        double calculatedSin = err.getY(DistanceUnit.CM) / distance;
-        double translationalPower = tPid.calculate(-distance, 0);
-        Vector pidCorrectionVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).scaleToMagnitude(1);
+        Vector pidCorrectionVector;
+        if (distance <= 1e-6) {
+            pidCorrectionVector = new Vector(0, 0);
+        } else {
+            double calculatedCos = err.getX(DistanceUnit.CM) / distance;
+            double calculatedSin = err.getY(DistanceUnit.CM) / distance;
+            double translationalPower = tPid.calculate(-distance, 0);
+            pidCorrectionVector = new Vector(translationalPower * calculatedCos, translationalPower * calculatedSin).scaleToMagnitude(1);
+        }
         telemetry.addData("Pid vect", pidCorrectionVector.toString());
 
         Vector finalPower = centripetalCorrectionVector.add(pidCorrectionVector);

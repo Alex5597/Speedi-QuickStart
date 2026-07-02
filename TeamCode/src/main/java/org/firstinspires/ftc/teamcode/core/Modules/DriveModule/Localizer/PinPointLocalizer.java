@@ -80,18 +80,16 @@ public class PinPointLocalizer implements Localizer {
         if (shouldUsePhysicalBraking)
             if (lateralDeceleration == 0 || forwardDeceleration == 0)
                 throw new RuntimeException("Change xDeceleration and yDeceleration from 0");
-        if (firstLoop) {
-            velocityAdapter = new VelocityAdapter();
-
-            xVelocityFilter.resetFilter(0);
-            yVelocityFilter.resetFilter(0);
-
-            firstLoop = false;
-        }
         odo.update();
 
         Pose2D pose = odo.getPosition();
         currentPosition = new Pose(pose).rotateFieldCoordinate(-Math.PI / 2);
+        if (firstLoop) {
+            velocityAdapter = new VelocityAdapter(currentPosition);
+            xVelocityFilter.resetFilter(0);
+            yVelocityFilter.resetFilter(0);
+            firstLoop = false;
+        }
         Vector velocity = velocityAdapter.getVelocity(currentPosition);
         velocityVectorRaw = new Vector(xVelocityFilter.getValue(velocity.getX()), yVelocityFilter.getValue(velocity.getY()), velocity.getHeading());
         glideVector = new Vector(
@@ -147,7 +145,9 @@ public class PinPointLocalizer implements Localizer {
 
         odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
 
-        velocityAdapter = new VelocityAdapter();
+        currentPosition = startPose;
+        predictedPose = startPose;
+        velocityAdapter = new VelocityAdapter(startPose);
         xVelocityFilter.resetFilter(0);
         yVelocityFilter.resetFilter(0);
         lastPosition = startPose;

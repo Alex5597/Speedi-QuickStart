@@ -184,6 +184,19 @@ public class Pose {
         return Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(heading);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Pose)) return false;
+        Pose other = (Pose) obj;
+        return Double.compare(x, other.x) == 0 && Double.compare(y, other.y) == 0 && Double.compare(heading, other.heading) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y, heading);
+    }
+
     private double angleWrapper(double angle) {
         angle %= (2.0 * Math.PI);
         if (angle > Math.PI) angle -= 2.0 * Math.PI;

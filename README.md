@@ -59,13 +59,16 @@ which uses generic names `M1`–`M4` and the gamepad buttons.)
 
 ## Step 2 — Localizer (Pinpoint)
 
-1. Measure with a ruler (in **mm**) and fill in `Constants.LocalizerConstants`:
-   - `perpXEncoderForwardDistanceToCenterOfRotation` — how far forward the perpendicular pod is from the robot's center of rotation
-   - `parYEncoderLateralDistanceToCenterOfRotation` — how far sideways the parallel pod is
+1. Measure with a ruler (in **mm**, from the robot's center of rotation) and fill in
+   `Constants.LocalizerConstants` — these follow the official Pinpoint convention:
+   - `xPodOffsetInMM` — how far **sideways** the **X pod** (the one that measures forward motion)
+     is: **left** of center is positive, right is negative
+   - `yPodOffsetInMM` — how far **forward** the **Y pod** (the one that measures strafing) is:
+     in **front** of center is positive, behind is negative
    - `typeOfEncoders` — your pod type (4-bar / swingarm / custom)
 
-   (Optional, more precise: run **`Odometry Pod Offsets Tuner`** — the robot spins in place and
-   calculates the offsets for you.)
+   (Optional, more precise: run **`Odometry Pod Offsets Tuner`** *after* finishing point 2 below —
+   the robot spins in place and calculates both offsets, signs included.)
 
 2. Run **`PinPointLocalizerTest`** and push/drive the robot around:
    - Drive **forward** → `Y` must increase

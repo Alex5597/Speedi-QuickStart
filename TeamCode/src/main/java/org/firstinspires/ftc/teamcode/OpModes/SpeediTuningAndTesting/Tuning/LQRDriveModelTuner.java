@@ -185,7 +185,9 @@ public class LQRDriveModelTuner extends LinearOpMode {
 
     private void applyCommand(double power) {
         if (axis == 2) {
-            drive.motors.setMotorPowerForced(new Vector(0, 0, power));
+            //negated so a positive command rotates CCW, matching the CCW positive measured omega:
+            //this keeps the fitted headingKS/KV/KA positive
+            drive.motors.setMotorPowerForced(new Vector(0, 0, -power));
         } else if (axis == 1) {
             drive.motors.setMotorPowerForced(new Vector(power, 0, 0));
         } else {

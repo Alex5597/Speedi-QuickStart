@@ -66,8 +66,10 @@ public class Constants {
 
         //TODO For PinPointLocalizer: measure with a ruler or run "Odometry Pod Offsets Tuner"
         public static GoBildaPinpointDriver.GoBildaOdometryPods typeOfEncoders = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD;
-        public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mms
-        public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mms
+        //how far SIDEWAYS (mm) from the robot's center of rotation the X (forward) pod is: LEFT of center is positive, RIGHT is negative
+        public static double xPodOffsetInMM = 5.0;
+        //how far FORWARD (mm) from the robot's center of rotation the Y (strafe) pod is: FORWARD of center is positive, BACKWARDS is negative
+        public static double yPodOffsetInMM = 30.0;
     }
 
     @Config

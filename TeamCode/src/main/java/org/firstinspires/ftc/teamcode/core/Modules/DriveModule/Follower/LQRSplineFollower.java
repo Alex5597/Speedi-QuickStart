@@ -164,7 +164,9 @@ public class LQRSplineFollower {
         Vector correctionRobot = tangent.scalarMultiply(alongPower).add(normal.scalarMultiply(crossPower)).add(pidCorrectionField).rotate(heading);
         Vector robotPower = feedforward.scalarMultiply(pathScale).add(correctionRobot);
         targetPose = new Pose(targetPoint, targetHeading);
-        return new Vector(robotPower.getX(), robotPower.getY(), headingPower).scaleToMagnitude_AngularAsWell(1);
+        //headingPower is computed CCW positive (like the localizer heading), but the chassis mixer
+        //treats a positive heading input as clockwise, so it is negated here
+        return new Vector(robotPower.getX(), robotPower.getY(), -headingPower).scaleToMagnitude_AngularAsWell(1);
     }
 
     public boolean isFinished(Pose robotPose, Vector robotVelocity) {

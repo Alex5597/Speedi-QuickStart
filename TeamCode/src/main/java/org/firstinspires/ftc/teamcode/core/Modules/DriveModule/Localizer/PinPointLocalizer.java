@@ -6,8 +6,8 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPoint
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.GoToPointConstants.shouldUsePhysicalBraking;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickForward;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.cmPerTickLateral;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.parYEncoderLateralDistanceToCenterOfRotation;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.perpXEncoderForwardDistanceToCenterOfRotation;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.xPodOffsetInMM;
+import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.yPodOffsetInMM;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseForwardEncoder;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.shouldReverseLateralEncoder;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.LocalizerConstants.typeOfEncoders;
@@ -38,7 +38,7 @@ public class PinPointLocalizer implements Localizer {
     public PinPointLocalizer(HardwareMap hardwareMap, Pose startPose) {
         odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
 
-        odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
+        odo.setOffsets(xPodOffsetInMM, yPodOffsetInMM);//X pod offset = sideways(left+), Y pod offset = forward(forward+), see the GoBildaPinpointDriver.setOffsets docs
         odo.setEncoderResolution(typeOfEncoders);
         odo.setEncoderDirections(shouldReverseForwardEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD, shouldReverseLateralEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();
@@ -58,7 +58,7 @@ public class PinPointLocalizer implements Localizer {
         this.telemetry = telemetry;
         odo = hardwareMap.get(GoBildaPinpointDriver.class, pinPointName);
 
-        odo.setOffsets(perpXEncoderForwardDistanceToCenterOfRotation, parYEncoderLateralDistanceToCenterOfRotation); //TODO MM departare de la fiecare odopod la centru de rotatie
+        odo.setOffsets(xPodOffsetInMM, yPodOffsetInMM);//X pod offset = sideways(left+), Y pod offset = forward(forward+), see the GoBildaPinpointDriver.setOffsets docs
         odo.setEncoderResolution(typeOfEncoders);
         odo.setEncoderDirections(shouldReverseForwardEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD, shouldReverseLateralEncoder ? GoBildaPinpointDriver.EncoderDirection.REVERSED : GoBildaPinpointDriver.EncoderDirection.FORWARD);//TODO
         odo.resetPosAndIMU();

@@ -220,6 +220,26 @@ public class CubicBezierCurve implements Spline {
         return a + (b - a) * frac;
     }
 
+    @Override
+    public double getTAtLength(double targetLength) {
+        if (targetLength <= 0 || length <= 0) return 0;
+        if (targetLength >= length) return 1;
+
+        int low = 0;
+        int high = lengthArray.size() - 1;
+        while (low < high) {
+            int mid = (low + high) / 2;
+            if (lengthArray.get(mid) < targetLength) low = mid + 1;
+            else high = mid;
+        }
+
+        int right = Math.max(1, low);
+        int left = right - 1;
+        double span = lengthArray.get(right) - lengthArray.get(left);
+        double alpha = span <= 1e-9 ? 0 : (targetLength - lengthArray.get(left)) / span;
+        return Math.min(1.0, (left + alpha) / (double) resolution);
+    }
+
     private void computeLength() {
         lengthArray.clear();
         length = 0;

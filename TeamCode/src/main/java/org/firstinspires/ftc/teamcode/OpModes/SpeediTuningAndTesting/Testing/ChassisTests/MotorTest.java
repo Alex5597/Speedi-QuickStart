@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.OpModes.SpeediTuningAndTesting.Testing.ChassisTests;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
+@TeleOp
 public class MotorTest extends LinearOpMode {
 
     DcMotorEx Motor1,Motor2,Motor3,Motor4;
@@ -39,6 +40,7 @@ public class MotorTest extends LinearOpMode {
             telemetry.addData("Motor 2(b de pe xbox): ", Motor2.getPower());
             telemetry.addData("Motor 3(x de pe xbox): ", Motor3.getPower());
             telemetry.addData("Motor 4(y de pe xbox): ", Motor4.getPower());
+            telemetry.update();
         }
     }
 }

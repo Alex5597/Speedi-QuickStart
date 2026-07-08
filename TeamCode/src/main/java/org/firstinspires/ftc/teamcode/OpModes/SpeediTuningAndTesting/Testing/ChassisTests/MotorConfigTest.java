@@ -16,7 +16,7 @@ public class MotorConfigTest extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            for (int i = 0; i < 4 || isStopRequested(); i++) {
+            for (int i = 0; i < 4 && opModeIsActive(); i++) {
                 telemetry.addLine(drive.motors.motors.get(i).name + " should be moving forward");
                 telemetry.update();
                 drive.motors.motors.get(i).setPowerForced(1);

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpModes.SpeediTuningAndTesting.Tuning;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -11,17 +12,22 @@ import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDr
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Globals;
 
+@Config
 @TeleOp
 public class MinimumPowerToOvercomeFrictionDrivetrainTuner extends LinearOpMode {
+    public static int iterations = 5;
+
     double[] sums = new double[4];
     double[] sumsV = new double[4];
-    int iterations = 5;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         SpeediDrive drive = new SpeediDrive(hardwareMap, new Pose(), telemetry,true);
         drive.setRunMode(SpeediDrive.RunMode.MANUAL);
+        //reset sums in case the opmode is restarted (statics keep their values between runs)
+        sums = new double[4];
+        sumsV = new double[4];
         double[] minPowersToOvercomeFriction = new double[4];
 
         Pose robotPose;

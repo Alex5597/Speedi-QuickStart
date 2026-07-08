@@ -5,42 +5,40 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Follower.SpeediDrive;
 import org.firstinspires.ftc.teamcode.core.Modules.DriveModule.Localizer.PinPointLocalizer;
 import org.firstinspires.ftc.teamcode.core.Util.Math.Pose;
-import org.firstinspires.ftc.teamcode.core.Util.utils.DrawRobot;
 
 @TeleOp
 public class PinPointLocalizerTest extends LinearOpMode {
-    PinPointLocalizer localizer;
     SpeediDrive drive;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        localizer = new PinPointLocalizer(hardwareMap, new Pose());
-        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, false);
+        //the drive's own localizer is used directly: a second PinPointLocalizer on the same device
+        //would reset it again and double the I2C traffic every loop
+        drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true);
+        drive.setRunMode(SpeediDrive.RunMode.MANUAL);
+        PinPointLocalizer localizer = drive.localizer;
 
         waitForStart();
 
         while (opModeIsActive()) {
-            DrawRobot.drawRobot(localizer.getPoseEstimate());
             if (gamepad1.a) {
-                localizer.resetPosition(new Pose());
                 drive.resetPosition(new Pose());
             }
-            drive.driveFieldCentric(gamepad1, 0);
+            drive.driveFieldCentric(gamepad1, localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
 
             telemetry.addData("Predicted pos", localizer.getPredictedPoseEstimate());
             telemetry.addData("Pos actuala", localizer.getPoseEstimate());
-            telemetry.addData("velocity prelucrata",localizer.getVelocity().toString());
-            telemetry.addData("velocity raw",localizer.getRawVelocity().toString());
+            telemetry.addData("velocity prelucrata", localizer.getVelocity().toString());
+            telemetry.addData("velocity raw", localizer.getRawVelocity().toString());
 
             telemetry.addData("If this isn't between 900 and 2000 the pinpoint is broken", localizer.odo.getFrequency());
             telemetry.update();
 
-
-            localizer.update();
             drive.update();
         }
     }

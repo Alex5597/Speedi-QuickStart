@@ -17,10 +17,11 @@ import java.util.ArrayList;
 @TeleOp
 @Config
 public class PositionsCreator extends LinearOpMode {
+    //public static so they show up in the FTC Dashboard config and can be set from the visualizer
+    public static double xSTartPoseInCm = 0, yStartPoseInCm = 0, headingStartPoseInDegrees = 0;
     ElapsedTime timer1 = new ElapsedTime(), timer2 = new ElapsedTime();
     SpeediDrive drive;
     ArrayList<Pose> positions = new ArrayList<>();
-    double xSTartPoseInCm = 0, yStartPoseInCm = 0, headingStartPoseInDegrees = 0;
     Pose startPose = new Pose(xSTartPoseInCm, yStartPoseInCm, DistanceUnit.CM, headingStartPoseInDegrees, AngleUnit.DEGREES);
 
     @Override
@@ -28,9 +29,10 @@ public class PositionsCreator extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new SpeediDrive(hardwareMap, startPose, telemetry, true, true);
         drive.setRunMode(SpeediDrive.RunMode.MANUAL);
-        while (!isStarted()) {
+        while (!isStarted() && !isStopRequested()) {
             telemetry.addLine("Set the start position by using the visualizer and place your robot on the exact position you want to start the auto and copy the coordinates");
             telemetry.update();
+            sleep(50);
         }
         waitForStart();
         telemetry.clearAll();
@@ -51,7 +53,7 @@ public class PositionsCreator extends LinearOpMode {
                 telemetry.update();
                 telemetry.addLine("Position saved, wait for the other telemetry to appear and you can continue/stop");
                 telemetry.update();
-                for (int i = 0; i <= 300000; i++) ;
+                sleep(500);
                 telemetry.clearAll();
                 telemetry.update();
             }

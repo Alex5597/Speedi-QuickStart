@@ -14,8 +14,6 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 @TeleOp
 public class TestSpline extends LinearOpMode {
 
-    int state = 0;
-
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -24,44 +22,31 @@ public class TestSpline extends LinearOpMode {
                 new CubicBezierCurve(new Vector(60, 135), new Vector(55, 47), new Vector(111, -39), new Vector(102, 161))
         );
 
-        BezierSpline spline2 = new BezierSpline(new CubicBezierCurve(new Vector(30, 150), new Vector(-30, 132.7), new Vector(-46, -120), new Vector(-46, 15), Math.toRadians(-35)));
-
-//        for (double i = 0; i <= 1; i += 10.0 / resolution) {
-//            telemetry.addData("First derivative AT t=" + i + " is", new Pose(spline1.calculate(i), spline1.heading(i)).toString());
-//            telemetry.addData("POSE AT t=" + i + " is", new Pose(spline1.firstDerivative(i), spline1.heading(i)).toString());
-//        }
-
-        // DrawRobot.drawPath(spline1, "#3F51B5");
-
         SpeediDrive drive = new SpeediDrive(hardwareMap, new Pose(), telemetry, true);
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         drive.setSpline_withTangentialHeadingChange(spline1);
         telemetry.addLine("GATA");
-//        telemetry.addLine(drive.getTarget().toString());
-//        telemetry.update();
-
 
         waitForStart();
 
-
-        while (opModeIsActive()) {
+        boolean exitRequested = false;
+        while (opModeIsActive() && !exitRequested) {
             while (opModeIsActive() && !drive.isDone()) {
                 drive.update();
+                if (gamepad1.a) exitRequested = true;
                 telemetry.update();
             }
-            if (gamepad1.a)
+            if (exitRequested)
                 break;
             drive.stop();
 
             drive.setTargetPose(new Pose(), true);
             while (opModeIsActive() && !drive.isDone()) {
                 drive.update();
+                if (gamepad1.a) exitRequested = true;
             }
-            drive.setSpline_withSlowerHeadingChange(spline1, 0.4);
+            if (!exitRequested)
+                drive.setSpline_withSlowerHeadingChange(spline1, 0.4);
         }
+        drive.stop();
     }
 }

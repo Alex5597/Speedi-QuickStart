@@ -18,7 +18,9 @@ public class TestNoGoZone extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         drive = new SpeediDrive(hardwareMap, new Pose(-120, -36.5, DistanceUnit.CM), telemetry, true);
-        drive.setNoGoZone(new Pose(-183, 90.5, DistanceUnit.CM), new Pose(183, 31.5, DistanceUnit.CM), 70);
+        //the zone must leave a corridor inside the field (corners inflated by half the robot size have to stay reachable),
+        //otherwise the avoidance has no corner to route through and throws "no go zone can not be avoided"
+        drive.setNoGoZone(new Pose(-183, 90.5, DistanceUnit.CM), new Pose(60, 31.5, DistanceUnit.CM), 70);
         telemetry.addLine("gata");
         telemetry.update();
         waitForStart();

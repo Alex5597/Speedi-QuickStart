@@ -174,17 +174,38 @@ public class BezierSpline implements Spline {
         return currentIndexLength + (nextIndexLength - currentIndexLength) * fractionalPart;
     }
 
+    @Override
+    public double getTAtLength(double targetLength) {
+        if (targetLength <= 0 || length <= 0) return 0;
+        if (targetLength >= length) return 1;
+
+        int low = 0;
+        int high = lengthArray.size() - 1;
+        while (low < high) {
+            int mid = (low + high) / 2;
+            if (lengthArray.get(mid) < targetLength) low = mid + 1;
+            else high = mid;
+        }
+
+        int right = Math.max(1, low);
+        int left = right - 1;
+        double span = lengthArray.get(right) - lengthArray.get(left);
+        double alpha = span <= 1e-9 ? 0 : (targetLength - lengthArray.get(left)) / span;
+        return Math.min(1.0, (left + alpha) / (double) resolution);
+    }
+
     private void computeLength() {
         lengthArray.clear();
         length = 0;
         double dt = 1.0 / (double) resolution;
-        for (double d = 0; d <= 1; d += dt) {
-            Vector currentPoint = calculate(d);
-            dashboardDrawingPoints[1][(int) (d * resolution)] = -currentPoint.getX() / 2.54;
-            dashboardDrawingPoints[0][(int) (d * resolution)] = currentPoint.getY() / 2.54;
+        for (int i = 0; i <= resolution; i++) {
+            double t = i * dt;
+            Vector currentPoint = calculate(t);
+            dashboardDrawingPoints[1][i] = -currentPoint.getX() / 2.54;
+            dashboardDrawingPoints[0][i] = currentPoint.getY() / 2.54;
 
             lengthArray.add(length);
-            length += firstDerivative(d).getMagnitude() * dt;
+            if (i < resolution) length += firstDerivative(t).getMagnitude() * dt;
         }
     }
 

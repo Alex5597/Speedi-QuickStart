@@ -4,8 +4,6 @@ import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNam
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.leftFrontMotorName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.rightBackMotorName;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.DeviceNames.rightFrontMotorName;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.forwardChassisMaxVelocity;
-import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.lateralChassisMaxVelocity;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.minPowerToOvercomeKineticFriction;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.minPowersToOvercomeStaticFriction;
 import static org.firstinspires.ftc.teamcode.core.Util.utils.Constants.MecanumChassisConstants.shouldReverseLeftBackMotor;
@@ -35,13 +33,6 @@ public class MecanumChassis implements Module {
     double[] wheelSpeeds = new double[4];
     private double maxPower = 1;
     double driveMultiplier = 1;
-    final Vector copiedFrontLeftVector = new Vector(-lateralChassisMaxVelocity, forwardChassisMaxVelocity).scaleToMagnitude(1);
-    final Vector[] mecanumVectors = new Vector[]{
-            Vector.polar(copiedFrontLeftVector.getMagnitude(), copiedFrontLeftVector.getRelativeHeading()),
-            Vector.polar(copiedFrontLeftVector.getMagnitude(), 2 * Math.PI - copiedFrontLeftVector.getRelativeHeading()),
-            Vector.polar(copiedFrontLeftVector.getMagnitude(), 2 * Math.PI - copiedFrontLeftVector.getRelativeHeading()),
-            Vector.polar(copiedFrontLeftVector.getMagnitude(), copiedFrontLeftVector.getRelativeHeading())
-    };
 
     public MecanumChassis(HardwareMap hardwareMap, boolean brake) {
         this.brake = brake;
@@ -118,30 +109,6 @@ public class MecanumChassis implements Module {
         wheelSpeeds[1] = input.getY() - input.getX() + input.getHeading();//LEFT BACK
         wheelSpeeds[2] = input.getY() - input.getX() - input.getHeading();//RIGHT FRONT
         wheelSpeeds[3] = input.getY() + input.getX() - input.getHeading();//RIGHT BACK
-
-        double max = 1;
-        for (double wheelSpeed : wheelSpeeds)
-            max = Math.max(max, Math.abs(wheelSpeed));
-
-        if (max > maxPower) {
-            wheelSpeeds[0] = (wheelSpeeds[0] / max) * maxPower;
-            wheelSpeeds[1] = (wheelSpeeds[1] / max) * maxPower;
-            wheelSpeeds[2] = (wheelSpeeds[2] / max) * maxPower;
-            wheelSpeeds[3] = (wheelSpeeds[3] / max) * maxPower;
-        }
-
-        for (int i = 0; i < 4; i++)
-            motors.get(i).setTargetPower(wheelSpeeds[i]);
-    }
-
-    public void setMotorPower(Vector[] truePathingVectors) {
-        truePathingVectors[0] = truePathingVectors[0].scalarMultiply(2.0);
-        truePathingVectors[1] = truePathingVectors[1].scalarMultiply(2.0);
-
-        wheelSpeeds[0] = (-mecanumVectors[1].getY() * truePathingVectors[0].getY() - truePathingVectors[0].getX() * mecanumVectors[1].getX()) / (mecanumVectors[1].getY() * mecanumVectors[0].getX() - mecanumVectors[0].getY() * mecanumVectors[1].getX());
-        wheelSpeeds[1] = (-mecanumVectors[0].getY() * truePathingVectors[0].getY() - truePathingVectors[0].getX() * mecanumVectors[0].getX()) / (mecanumVectors[0].getY() * mecanumVectors[1].getX() - mecanumVectors[1].getY() * mecanumVectors[0].getX());
-        wheelSpeeds[2] = (-mecanumVectors[3].getY() * truePathingVectors[1].getY() - truePathingVectors[1].getX() * mecanumVectors[3].getX()) / (mecanumVectors[3].getY() * mecanumVectors[2].getX() - mecanumVectors[2].getY() * mecanumVectors[3].getX());
-        wheelSpeeds[3] = (-mecanumVectors[2].getY() * truePathingVectors[1].getY() - truePathingVectors[1].getX() * mecanumVectors[2].getX()) / (mecanumVectors[2].getY() * mecanumVectors[3].getX() - mecanumVectors[3].getY() * mecanumVectors[2].getX());
 
         double max = 1;
         for (double wheelSpeed : wheelSpeeds)

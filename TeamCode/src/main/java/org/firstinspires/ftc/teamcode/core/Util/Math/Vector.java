@@ -99,6 +99,16 @@ public class Vector {
         return angle;
     }
 
+    /**
+     * Wraps any angle to [-PI, PI]
+     */
+    public static double wrapAngle(double angleRadians) {
+        double angle = angleRadians % (2.0 * Math.PI);
+        if (angle > Math.PI) angle -= 2.0 * Math.PI;
+        if (angle < -Math.PI) angle += 2.0 * Math.PI;
+        return angle;
+    }
+
     public double getX() {
         return x;
     }

@@ -54,7 +54,8 @@ public class SpeediDrive implements Module {
     public PinPointLocalizer localizer;
     public MecanumChassis motors;
     public boolean robotIsStuck = false;
-    public SplineFollower follower;
+    public VectorialSplineFollower follower;
+    public LQRSplineFollower lqrFollower;
     public Spline curve = null;
     public DashboardPoseTracker poseTracker;
     Telemetry telemetry;
@@ -146,7 +147,7 @@ public class SpeediDrive implements Module {
         trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
         if (trajectory.getTargetAngle() == Double.POSITIVE_INFINITY)
             trajectory.setTargetHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
-        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
+        follower = new VectorialSplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
         startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
@@ -169,7 +170,7 @@ public class SpeediDrive implements Module {
         trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
         if (trajectory.getTargetAngle() == Double.POSITIVE_INFINITY)
             trajectory.setTargetHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
-        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
+        follower = new VectorialSplineFollower(localizer.getPoseEstimate(), trajectory, telemetry, Range.clip(rateOfChange, 0, 1));
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
         robotIsStuck = false;
@@ -184,7 +185,7 @@ public class SpeediDrive implements Module {
         this.curve = trajectory;
         localizer.update();
         trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
-        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
+        follower = new VectorialSplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
         robotIsStuck = false;
@@ -199,11 +200,26 @@ public class SpeediDrive implements Module {
         this.curve = trajectory;
         localizer.update();
         trajectory.setFirstHeading(Math.toRadians(startAngleOfTrajInDegrees));
-        follower = new SplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
+        follower = new VectorialSplineFollower(localizer.getPoseEstimate(), trajectory, telemetry);
         targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
         falseTargetPose = targetPose;
         robotIsStuck = false;
         startAngleTraj = Math.toRadians(startAngleOfTrajInDegrees);
+        trajectoryDone = false;
+        timerSinceStart.reset();
+        timerResetFailsafe = false;
+    }
+
+    public void setSpline_withLQR(Spline trajectory) {
+        this.runMode = RunMode.LQRSpline;
+        this.curve = trajectory;
+        localizer.update();
+        trajectory.setFirstHeading(localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS));
+        lqrFollower = new LQRSplineFollower(trajectory, telemetry);
+        targetPose = new Pose(trajectory.calculate(1), trajectory.heading(1));
+        falseTargetPose = targetPose;
+        robotIsStuck = false;
+        startAngleTraj = localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
         trajectoryDone = false;
         timerSinceStart.reset();
         timerResetFailsafe = false;
@@ -452,7 +468,12 @@ public class SpeediDrive implements Module {
                 DrawRobot.drawDebug(this);
             }
             if (runMode != RunMode.MANUAL) {
-                if (isOnlyTarget || runMode == RunMode.Spline) {
+                if (runMode == RunMode.LQRSpline) {
+                    if (lqrFollower != null && lqrFollower.isFinished(localizer.getPoseEstimate(), localizer.getVelocity())) {
+                        trajectoryDone = true;
+                        robotIsStuck = false;
+                    }
+                } else if (isOnlyTarget || runMode == RunMode.Spline) {
                     if (!customTolerance) {
                         if (reachedTarget(3) && reachedHeading(3) && stopped()) {
                             trajectoryDone = true;
@@ -583,6 +604,16 @@ public class SpeediDrive implements Module {
                     } else {
                         resetMultipliers();
                         updateTargetPose(targetPose, false);
+                    }
+                }
+                break;
+            case LQRSpline:
+                if (lqrFollower != null) {
+                    motors.resetMinPowersToOvercomeFriction();
+                    Vector followerPowerLQR = lqrFollower.getMotorPower(localizer.getPoseEstimate(), localizer.getVelocity());
+                    if (!followerPowerLQR.isNaN()) {
+                        powerVector = followerPowerLQR;
+                        motors.setMotorPower(powerVector);
                     }
                 }
                 break;
@@ -761,7 +792,6 @@ public class SpeediDrive implements Module {
             drive.scalarMultiply(0);
         }
 
-        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
         motors.setMotorPowerForced(drive);
     }
 
@@ -777,7 +807,6 @@ public class SpeediDrive implements Module {
             drive.scalarMultiply(0);
         }
 
-        //setMotorPower(new Vector[]{new Vector(drive.getX(), Range.clip(drive.getY() + drive.getHeading(), -1, 1)), new Vector(drive.getX(), Range.clip(drive.getY() - drive.getHeading(), -1, 1))});
         motors.setMotorPowerForced(drive);
     }
 
@@ -1006,6 +1035,8 @@ public class SpeediDrive implements Module {
     public double getPercentageOfTrajectoryDone() {
         if (runMode == RunMode.Spline) {
             return follower.percentageOfTrajectoryThatIsDone();
+        } else if (runMode == RunMode.LQRSpline) {
+            return lqrFollower != null ? lqrFollower.percentageOfTrajectoryThatIsDone() : 0;
         } else if (runMode != RunMode.MANUAL) {
             double currentDistToTarget = targetPose.distanceTo(localizer.getPoseEstimate(), DistanceUnit.CM);
             return (100.0 - currentDistToTarget / initialDistance * 100.0);
@@ -1030,6 +1061,6 @@ public class SpeediDrive implements Module {
     }
 
     public enum RunMode {
-        PID, MANUAL, Spline, CalibrateSplinePID
+        PID, MANUAL, Spline, LQRSpline, CalibrateSplinePID
     }
 }

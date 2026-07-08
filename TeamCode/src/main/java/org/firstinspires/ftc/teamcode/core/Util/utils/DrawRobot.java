@@ -19,7 +19,7 @@ public class DrawRobot {
 
     public static void drawDebug(SpeediDrive drive) {
         Pose pose = drive.getLocalizerInstance().getPoseEstimate();
-        if (drive.getRunMode() == SpeediDrive.RunMode.Spline) {
+        if (drive.getRunMode() == SpeediDrive.RunMode.Spline || drive.getRunMode() == SpeediDrive.RunMode.LQRSpline) {
             Spline spline = drive.curve;
             drawPath(spline, "#3F51B5");
         } else if (drive.getRunMode() == SpeediDrive.RunMode.PID && drive.getTarget().getX(DistanceUnit.CM) != WAIT_TIME_VARIABLE) {

@@ -27,6 +27,8 @@ public interface Spline {
 
     double getLengthAt(double t);
 
+    double getTAtLength(double length);
+
     double getLength();
     double[][] getDashboardDrawingPoints();
 

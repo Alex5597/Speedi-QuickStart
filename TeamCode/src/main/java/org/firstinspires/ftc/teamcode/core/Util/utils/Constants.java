@@ -50,6 +50,7 @@ public class Constants {
 
     @Config
     public static class LocalizerConstants {
+        //checked with "PinPointLocalizerTest": drive forward -> Y must increase, right -> X must increase
         public static boolean shouldReverseLateralEncoder = false;
         public static boolean shouldReverseForwardEncoder = true;
         public static final double cmPerTickForward = 1.00 / (19.89436789f / 10); //TODO ADJUST THIS FOR PinpointLocalizer in case you use anything else than goBilda encoders
@@ -63,7 +64,7 @@ public class Constants {
         public static RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
 
-        //TODO For PinPointLocalizer:
+        //TODO For PinPointLocalizer: measure with a ruler or run "Odometry Pod Offsets Tuner"
         public static GoBildaPinpointDriver.GoBildaOdometryPods typeOfEncoders = GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD;
         public static double perpXEncoderForwardDistanceToCenterOfRotation = 30.0; //in mms
         public static double parYEncoderLateralDistanceToCenterOfRotation = 5.0;//in mms
@@ -72,14 +73,18 @@ public class Constants {
     @Config
     public static class GoToPointConstants {
         public static boolean shouldUsePhysicalBraking = true;//TODO IF THIS IS TRUE DO NOT ADD kD TO THE tPIDCoeff_GoToPoint AND ADJUST (xDeceleration and yDeceleration) INSTEAD
+
+        //measured by "Braking Deceleration Tuner", then fine tuned LIVE in "Test Predicted Pose"
+        //until the predicted stop point matches where the robot actually stops
         public static double lateralDeceleration = 247.58438571923446;
         public static double forwardDeceleration = 270.13739836707487; //Deceleration for velocity-based stopping
 
-
+        //tuned by hand with "ChassisPIDTuner" (dashboard): raise p until the robot reaches the target fast without oscillating
         public static PIDCoefficients
                 tPIDCoeff_GoToPoint = new PIDCoefficients(0.13, 0, 0.0),
                 hPIDCoeff_GoToPoint = new PIDCoefficients(1, 0, 0.005);
 
+        //slower, precise PID used near the target for the final adjustment
         public static boolean useFinalAdj = true;
         public static PIDCoefficients
                 tPIDCoeff_finalAdj = new PIDCoefficients(0.1, 0, 0.005),
@@ -93,21 +98,22 @@ public class Constants {
 
     @Config
     public static class MecanumChassisConstants {
+        //set with "MotorConfigTest": flip a motor if it spins backwards there
         public static boolean shouldReverseLeftForwardMotor = false;
         public static boolean shouldReverseRightForwardMotor = true;
         public static boolean shouldReverseLeftBackMotor = false;
         public static boolean shouldReverseRightBackMotor = true;
 
-        public static final double lateralChassisMaxVelocity = 267.5613572791492;
-        public static final double forwardChassisMaxVelocity = 294.10969518367864;
-
-        public static double[] minPowersToOvercomeStaticFriction = new double[]{ //TODO Copy values with voltage correction
+        //measured by "MinimumPowerToOvercomeFrictionDrivetrainTuner" (copy the values WITH voltage correction)
+        public static double[] minPowersToOvercomeStaticFriction = new double[]{
                 0.2054365061678371,// leftFront
                 0.2253323134198863,// leftBack
                 0.20239842553744758,// rightFront
                 0.22502940962152113// rightBack
         };
+        //measured by "Kinetic Kstatic Tuner"
         public static double minPowerToOvercomeKineticFriction = 0.1309;
+        //measured by "SWITCH_FROM_STATIC_TO_KINETIC_FRICTIONTuner"
         public static final int SWITCH_FROM_STATIC_TO_KINETIC_FRICTION = 92;//In MS
 
 
@@ -137,6 +143,53 @@ public class Constants {
         public static PIDCoefficients
                 tPIDCoeff_SplineFollower = new PIDCoefficients(0.11, 0, 0.001),
                 hPIDCoeff_SplineFollower = new PIDCoefficients(0.5, 0, 0.001);
+    }
+
+    @Config
+    public static class LQRSplineConstants {
+        //Drive model, measured by "LQR Drive Model Tuner" (one run per axis): power = kS*sign(v) + kV*v + kA*a
+        public static double forwardKS = 0.13;//axis 0
+        public static double forwardKV = 0.0034;
+        public static double forwardKA = 0.0010;
+        public static double strafeKS = 0.15;//axis 1
+        public static double strafeKV = 0.0038;
+        public static double strafeKA = 0.0012;
+        public static double headingKS = 0.10;//axis 2
+        public static double headingKV = 0.25;
+        public static double headingKA = 0.03;
+
+        //Motion profile. The max velocity is computed from the model above (forward and strafe are
+        //different automatically), so there is no separate max velocity constant to tune
+        public static double profilePowerBudget = 0.9;//THE speed knob: fraction of full power the path planning uses, the rest stays as headroom for corrections
+        public static double maxAcceleration = 250;//cm/s^2, copy ~80% of the value from "LQR Drive Model Tuner"
+        public static double maxDeceleration = 300;//cm/s^2, copy ~80% of the value from "LQR Drive Model Tuner"
+
+        //LQR state feedback gains, computed by "LQR Gain Calculator" from the model above
+        public static double alongKPosition = 0.021;
+        public static double alongKVelocity = 0.0055;
+        public static double crossKPosition = 0.021;
+        public static double crossKVelocity = 0.0057;
+        public static double headingKPosition = 1.30;
+        public static double headingKVelocity = 0.23;
+
+        //Small PID trim on top of the LQR for residual errors, keep the gains low (the I term removes steady state error)
+        public static PIDCoefficients xyPIDCoeff_LQR = new PIDCoefficients(0.004, 0.008, 0);
+        public static PIDCoefficients hPIDCoeff_LQR = new PIDCoefficients(0.2, 0.4, 0);
+
+        //Behavior
+        public static double slowdownDemandThreshold = 0.4;//fraction of correction saturation before the robot starts slowing down (higher = faster but sloppier in curves)
+        public static double minPathSpeedScale = 0.35;//speed floor when the corrections are saturated
+        public static double alongLagTolerance = 8;//cm the robot may fall behind the profile before it starts pausing
+        public static double maxCorrectionPower = 0.55;
+        public static double maxHeadingPower = 0.45;
+        public static double frictionVelocityDeadband = 5;//cm/s under which the kS term fades to 0
+        public static double frictionOmegaDeadband = 0.2;//rad/s under which the heading kS term fades to 0
+
+        //isFinished tolerances
+        public static double positionTolerance = 3;//cm
+        public static double headingTolerance = 3;//degrees
+        public static double velocityTolerance = 10;//cm/s
+        public static double angularVelocityTolerance = 8;//degrees/s
     }
 
     public static final double WAIT_TIME_VARIABLE = 99999999.991; //IGNORA

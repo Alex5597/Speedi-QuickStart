@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
 import org.firstinspires.ftc.teamcode.core.Util.utils.Constants;
 
 @Config
-public class SplineFollower {
+public class VectorialSplineFollower {
     public Spline trajectory;
     private final PIDController tPid = new PIDController(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d);
     private final PIDController hPid = new PIDController(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
@@ -32,13 +32,12 @@ public class SplineFollower {
     Vector finalPoint;
     boolean goToPoint;
     double tLerp = -1;
-    boolean tangential = false, instantHeading = true;
+    boolean instantHeading = true;
 
-    public SplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
+    public VectorialSplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
         this.instantHeading = true;
-        this.tangential = false;
 
         telemetry.addLine(startPose.toString());
         finalPoint = trajectory.calculate(1);
@@ -55,36 +54,14 @@ public class SplineFollower {
         hPid.reset();
     }
 
-    public SplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
+    public VectorialSplineFollower(Pose startPose, @NonNull Spline trajectory, Telemetry telemetry, double rateOfChange) {
         this.trajectory = trajectory;
         this.telemetry = telemetry;
 
         this.instantHeading = false;
-        this.tangential = false;
         tLerp = rateOfChange;
 
         telemetry.addLine(startPose.toString());
-        finalPoint = trajectory.calculate(1);
-        goToPoint = false;
-
-        //xPid.setPID(xPIDCoeff_Spline.p, xPIDCoeff_Spline.i, xPIDCoeff_Spline.d);
-        //yPid.setPID(yPIDCoeff_Spline.p, yPIDCoeff_Spline.i, yPIDCoeff_Spline.d);
-        tPid.setPIDF(tPIDCoeff_SplineFollower.p, tPIDCoeff_SplineFollower.i, tPIDCoeff_SplineFollower.d, 0);
-        hPid.setPID(hPIDCoeff_SplineFollower.p, hPIDCoeff_SplineFollower.i, hPIDCoeff_SplineFollower.d);
-
-        //xPid.reset();
-        //yPid.reset();
-        tPid.reset();
-        hPid.reset();
-    }
-
-    public SplineFollower(@NonNull Spline trajectory, Telemetry telemetry, boolean tangential) {
-        this.trajectory = trajectory;
-        this.telemetry = telemetry;
-
-        this.instantHeading = false;
-        this.tangential = tangential;
-
         finalPoint = trajectory.calculate(1);
         goToPoint = false;
 
@@ -113,10 +90,7 @@ public class SplineFollower {
         Pose targetPose = new Pose(currTargetPoint, trajectory.heading(currentT + 1.0 / resolution));
         if (instantHeading)
             headingMultiplier = 4;
-        else if (tangential) {
-            headingMultiplier = 10;
-            targetPose.setHeading(trajectory.heading(currentT + 1.0 / resolution), AngleUnit.RADIANS);
-        } else if (tLerp != -1)
+        else if (tLerp != -1)
             targetPose.setHeading(hlerp(robotPose.getHeading(AngleUnit.RADIANS), trajectory.heading(currentT + 1.0 / resolution), tLerp), AngleUnit.RADIANS);
 
         // Check for final adjustment

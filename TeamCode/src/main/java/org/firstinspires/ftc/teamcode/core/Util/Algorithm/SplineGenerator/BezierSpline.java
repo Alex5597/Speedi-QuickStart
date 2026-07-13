@@ -85,7 +85,8 @@ public class BezierSpline implements Spline {
             return targetAngle;
         if (segmentTargetAngle != Double.POSITIVE_INFINITY)
             return segmentTargetAngle;
-        return firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading() + firstAngle;
+        //atan2 tangent angles are CCW positive while headings are CW positive, hence the minus
+        return firstAngle - (firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading());
     }
 
     @Override

@@ -447,11 +447,11 @@ public class SpeediDrive implements Module {
      * @param shouldWaitToStopCompletelyAtTheEndOfTrajectory either the robot should stop completely or not at the end of the strafe
      */
     public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
-        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(-getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
+        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(getCurrentPos().getHeading(AngleUnit.RADIANS))), shouldWaitToStopCompletelyAtTheEndOfTrajectory);
     }
 
     public void driveRelativelyToRobotPos(double distanceInCmLateral, double distanceInCmForward, double degreesToTurn, Pose tolerance, boolean shouldWaitToStopCompletelyAtTheEndOfTrajectory) {
-        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(-getCurrentPos().getHeading(AngleUnit.RADIANS))), tolerance, shouldWaitToStopCompletelyAtTheEndOfTrajectory);
+        setTargetPose(getCurrentPos().add(new Pose(distanceInCmLateral, distanceInCmForward, DistanceUnit.CM, degreesToTurn, AngleUnit.DEGREES).rotateFieldCoordinate(getCurrentPos().getHeading(AngleUnit.RADIANS))), tolerance, shouldWaitToStopCompletelyAtTheEndOfTrajectory);
     }
 
     public boolean stopped() {
@@ -585,7 +585,7 @@ public class SpeediDrive implements Module {
                 }
 
                 double headingDiff = angleWrapper(err.getHeading());
-                double headingPower = -hPid.calculate(-headingDiff, 0);
+                double headingPower = hPid.calculate(-headingDiff, 0);
                 powerVector.setHeading(headingPower);
                 powerVector = powerVector.rotate(currentPose.getHeading(AngleUnit.RADIANS)).scaleToMagnitude_AngularAsWell(1);
                 powerVector = new Vector(powerVector.getX() * lateralMultiplier, powerVector.getY() * forwardMultiplier, headingPower * headingMultiplier);

@@ -169,8 +169,12 @@ public class Vector {
         return scalarDivide(this, scalar);
     }
 
+    /**
+     * Rotates the vector counter-clockwise by angle. Since SPEEDI headings are CLOCKWISE positive,
+     * rotate(heading) converts a field vector into the robot frame and rotate(-heading) converts back.
+     */
     public Vector rotate(double angle) {
-        return new Vector(Math.cos(angle) * x + Math.sin(angle) * y, Math.cos(angle) * y - Math.sin(angle) * x, heading);
+        return new Vector(Math.cos(angle) * x - Math.sin(angle) * y, Math.sin(angle) * x + Math.cos(angle) * y, heading);
     }
 
     public Vector scaleToMagnitude(double targetMagnitude) {

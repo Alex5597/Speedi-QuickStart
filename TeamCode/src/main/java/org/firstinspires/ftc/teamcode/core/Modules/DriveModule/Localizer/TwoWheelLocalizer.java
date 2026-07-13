@@ -56,8 +56,9 @@ public class TwoWheelLocalizer implements Localizer {
         currentPosition = startPose;
         this.telemetry = telemetry;
         this.hardwareMap = hardwareMap;
+        //SPEEDI headings are CW positive, the IMU and the internal odometry math are CCW positive
         startAngle = startPose.getHeading(AngleUnit.RADIANS);
-        lastAngle = startAngle;
+        lastAngle = -startAngle;
 
         par = new Encoder(hardwareMap.get(DcMotorEx.class, "LFM"));
         perp = new Encoder(hardwareMap.get(DcMotorEx.class, "RFM"));
@@ -79,7 +80,8 @@ public class TwoWheelLocalizer implements Localizer {
     public void update() {
         double par_current_pos = xPositionFilter.getValue(par.getCurrentPosition());
         double perp_current_pos = yPositionFilter.getValue(perp.getCurrentPosition());
-        double angle = startAngle + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading;
+        //CCW positive angle used by all the internal odometry math below
+        double angle = -startAngle + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading;
 
         double xVelocity = par.getCorrectedVelocity();
         double yVelocity = perp.getCorrectedVelocity();
@@ -120,7 +122,7 @@ public class TwoWheelLocalizer implements Localizer {
                         -(dy * (a * d + e * b) + dx * (e * a + c * d)),
                         dy * (b * d - e * a) + dx * (a * d - e * c),
                         DistanceUnit.CM,
-                        Δ_theta,
+                        -Δ_theta,//CCW positive internally, CW positive in the reported pose
                         AngleUnit.RADIANS
                 )
         );
@@ -143,7 +145,8 @@ public class TwoWheelLocalizer implements Localizer {
 
     @Override
     public void updateOnlyImu() {
-        double angle = startAngle + imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading;
+        //the IMU yaw is CCW positive, SPEEDI headings are CW positive
+        double angle = startAngle - (imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) - initialHeading);
         currentPosition.setHeading(angleWrapper(angle), AngleUnit.RADIANS);
     }
 
@@ -184,7 +187,7 @@ public class TwoWheelLocalizer implements Localizer {
             par.setDirection(Encoder.Direction.REVERSE);
             perp.setDirection(Encoder.Direction.FORWARD);
 
-            lastAngle = startAngle;
+            lastAngle = -startAngle;//internal odometry angle is CCW positive
             prev_par_pos = par.getCurrentPosition();
             prev_perp_pos = perp.getCurrentPosition();
 

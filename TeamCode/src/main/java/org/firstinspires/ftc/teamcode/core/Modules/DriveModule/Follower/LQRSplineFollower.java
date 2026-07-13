@@ -156,7 +156,7 @@ public class LQRSplineFollower {
 
         // Full speed while corrections stay under the threshold; only a significant error slows the path down
         double correctionDemand = Math.max(Math.abs(crossPower) / Math.max(maxCorrectionPower, 1e-6), Math.abs(headingPower) / Math.max(maxHeadingPower, 1e-6));
-        double demandOverThreshold = Range.clip((correctionDemand - slowdownDemandThreshold) / Math.max(1.0 - slowdownDemandThreshold, 1e-6), 0, 1);
+        double demandOverThreshold = Range.clip((co0prrectionDemand - slowdownDemandThreshold) / Math.max(1.0 - slowdownDemandThreshold, 1e-6), 0, 1);
         double pathScale = 1.0 - demandOverThreshold * (1.0 - minPathSpeedScale);
         lastPathScale = pathScale;
         alongPower = Range.clip(alongPower * pathScale, -maxCorrectionPower, maxCorrectionPower);
@@ -164,9 +164,7 @@ public class LQRSplineFollower {
         Vector correctionRobot = tangent.scalarMultiply(alongPower).add(normal.scalarMultiply(crossPower)).add(pidCorrectionField).rotate(heading);
         Vector robotPower = feedforward.scalarMultiply(pathScale).add(correctionRobot);
         targetPose = new Pose(targetPoint, targetHeading);
-        //headingPower is computed CCW positive (like the localizer heading), but the chassis mixer
-        //treats a positive heading input as clockwise, so it is negated here
-        return new Vector(robotPower.getX(), robotPower.getY(), -headingPower).scaleToMagnitude_AngularAsWell(1);
+        return new Vector(robotPower.getX(), robotPower.getY(), headingPower).scaleToMagnitude_AngularAsWell(1);
     }
 
     public boolean isFinished(Pose robotPose, Vector robotVelocity) {
@@ -209,7 +207,7 @@ public class LQRSplineFollower {
         double pathMax = forwardMax;
         for (int i = 0; i <= 50; i++) {
             double t = i / 50.0;
-            double travelAngle = trajectory.firstDerivative(t).getRelativeHeading() - trajectory.heading(t);
+            double travelAngle = trajectory.firstDerivative(t).getRelativeHeading() + trajectory.heading(t);
             double forwardShare = Math.sin(travelAngle);
             double strafeShare = Math.cos(travelAngle);
             double limit = 1.0 / Math.sqrt(forwardShare * forwardShare / (forwardMax * forwardMax) + strafeShare * strafeShare / (strafeMax * strafeMax));

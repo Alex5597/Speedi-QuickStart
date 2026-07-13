@@ -50,7 +50,8 @@ public class Constants {
 
     @Config
     public static class LocalizerConstants {
-        //checked with "PinPointLocalizerTest": drive forward -> Y must increase, right -> X must increase
+        //SPEEDI frame: X right positive, Y forward positive, heading CLOCKWISE positive
+        //checked with "PinPointLocalizerTest": drive forward -> Y up, right -> X up, turn right -> heading up
         public static boolean shouldReverseLateralEncoder = false;
         public static boolean shouldReverseForwardEncoder = true;
         public static final double cmPerTickForward = 1.00 / (19.89436789f / 10); //TODO ADJUST THIS FOR PinpointLocalizer in case you use anything else than goBilda encoders

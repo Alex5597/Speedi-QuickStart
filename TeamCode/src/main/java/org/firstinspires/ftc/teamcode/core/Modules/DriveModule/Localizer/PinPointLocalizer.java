@@ -48,7 +48,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
+        odo.setPosition(toPinpointFrame(startPose));
         currentPosition = startPose;
         lastPosition = startPose;
         predictedPose = startPose;
@@ -68,7 +68,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
+        odo.setPosition(toPinpointFrame(startPose));
 
         currentPosition = startPose;
         lastPosition = startPose;
@@ -83,7 +83,7 @@ public class PinPointLocalizer implements Localizer {
         odo.update();
 
         Pose2D pose = odo.getPosition();
-        currentPosition = new Pose(pose).rotateFieldCoordinate(-Math.PI / 2);
+        currentPosition = fromPinpointFrame(pose);
         if (firstLoop) {
             velocityAdapter = new VelocityAdapter(currentPosition);
             xVelocityFilter.resetFilter(0);
@@ -143,7 +143,7 @@ public class PinPointLocalizer implements Localizer {
             e.printStackTrace();
         }
 
-        odo.setPosition(startPose.rotateFieldCoordinate(Math.PI / 2).toPose2D());
+        odo.setPosition(toPinpointFrame(startPose));
 
         currentPosition = startPose;
         predictedPose = startPose;
@@ -156,8 +156,25 @@ public class PinPointLocalizer implements Localizer {
     @Override
     public void updateOnlyImu() {
         odo.update(GoBildaPinpointDriver.readData.ONLY_UPDATE_HEADING);
-        double angle = angleWrapper(odo.getHeading());
+        //the Pinpoint heading is CCW positive, SPEEDI headings are CW positive
+        double angle = angleWrapper(-odo.getHeading());
         currentPosition = new Pose(0, 0, DistanceUnit.CM, angle, AngleUnit.RADIANS);
+    }
+
+    /**
+     * Converts from the Pinpoint frame (x forward, y left, heading CCW positive) to the SPEEDI
+     * frame (x right, y forward, heading CW positive)
+     */
+    private static Pose fromPinpointFrame(Pose2D pinpointPose) {
+        Pose rotated = new Pose(pinpointPose).rotateFieldCoordinate(-Math.PI / 2);
+        rotated.setHeading(-rotated.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+        return rotated;
+    }
+
+    private static Pose2D toPinpointFrame(Pose speediPose) {
+        Pose rotated = speediPose.rotateFieldCoordinate(Math.PI / 2);
+        rotated.setHeading(-speediPose.getHeading(AngleUnit.RADIANS), AngleUnit.RADIANS);
+        return rotated.toPose2D();
     }
 
     @Override

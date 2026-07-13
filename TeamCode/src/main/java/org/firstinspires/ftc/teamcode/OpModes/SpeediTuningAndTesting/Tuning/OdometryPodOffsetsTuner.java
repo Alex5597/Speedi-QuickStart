@@ -20,9 +20,9 @@ import org.firstinspires.ftc.teamcode.core.Util.Math.Vector;
  * </ul>
  * Copy both results into Constants.LocalizerConstants.
  * <p>
- * How it works: when the robot only rotates (CCW positive heading), a pod mounted off-center still
+ * How it works: when the robot only rotates (CW positive heading), a pod mounted off-center still
  * slides, so its ticks change proportionally to its offset:
- * X pod: dTicksX/dHeading = -xPodOffset, Y pod: dTicksY/dHeading = +yPodOffset (in mm per radian).
+ * X pod: dTicksX/dHeading = +xPodOffset, Y pod: dTicksY/dHeading = -yPodOffset (in mm per radian).
  * A least squares fit of ticks vs heading gives the slopes, and the offsets follow directly.
  * <p>
  * DO STEP 2 OF THE README FIRST: driving forward must increase the X ticks and strafing LEFT must
@@ -82,10 +82,10 @@ public class OdometryPodOffsetsTuner extends LinearOpMode {
         }
         drive.motors.setMotorPower(0, 0, 0, 0);
 
-        //xOffset is sideways-left of the X pod: its ticks change at -offset per radian of CCW rotation
-        double xPodOffsetInMM = -slope(sumX, sumTX);
-        //yOffset is forward of the Y pod: its ticks change at +offset per radian of CCW rotation
-        double yPodOffsetInMM = slope(sumY, sumTY);
+        //xOffset is sideways-left of the X pod: its ticks change at +offset per radian of CW rotation
+        double xPodOffsetInMM = slope(sumX, sumTX);
+        //yOffset is forward of the Y pod: its ticks change at -offset per radian of CW rotation
+        double yPodOffsetInMM = -slope(sumY, sumTY);
 
         while (opModeIsActive()) {
             telemetry.addLine("====== RESULTS: copy into Constants.LocalizerConstants ======");
@@ -99,7 +99,7 @@ public class OdometryPodOffsetsTuner extends LinearOpMode {
     }
 
     private double heading() {
-        //SPEEDI heading equals the Pinpoint heading (rotateFieldCoordinate only rotates x/y), CCW positive
+        //SPEEDI heading, CW positive
         return drive.localizer.getPoseEstimate().getHeading(AngleUnit.RADIANS);
     }
 

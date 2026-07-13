@@ -128,7 +128,7 @@ public class VectorialSplineFollower {
         }
 
         double headingDiff = angleWrapper(err.getHeading(AngleUnit.RADIANS));
-        double headingPower = -hPid.calculate(-headingDiff, 0);
+        double headingPower = hPid.calculate(-headingDiff, 0);
         finalPower.setHeading(headingPower);
         telemetry.addData("Heading power", headingPower);
         if (finalPower.getMagnitude_AngularAsWell() >= 1) {

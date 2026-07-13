@@ -99,8 +99,9 @@ public class CubicBezierCurve implements Spline {
     }
 
     public double heading(double t) {
+        //atan2 tangent angles are CCW positive while headings are CW positive, hence the minus
         if (targetAngle == Double.POSITIVE_INFINITY)
-            return firstAngle + firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading();
+            return firstAngle - (firstDerivative(t).getRelativeHeading() - firstDerivative(0).getRelativeHeading());
         else
             return targetAngle;
     }

@@ -94,7 +94,8 @@ public class DrawRobot {
         c.setStrokeWidth(1);
         c.strokeCircle(t.getX(DistanceUnit.INCH), t.getY(DistanceUnit.INCH), ROBOT_RADIUS);
 
-        Vector halfv = new Vector(Math.cos(t.getHeading(AngleUnit.RADIANS)), Math.sin(t.getHeading(AngleUnit.RADIANS))).scalarMultiply(ROBOT_RADIUS * 0.5);
+        //headings are CW positive, dashboard angles CCW positive, so the sin is negated
+        Vector halfv = new Vector(Math.cos(t.getHeading(AngleUnit.RADIANS)), -Math.sin(t.getHeading(AngleUnit.RADIANS))).scalarMultiply(ROBOT_RADIUS * 0.5);
         Vector p1 = new Vector(t.getX(DistanceUnit.INCH) + halfv.getX(), t.getY(DistanceUnit.INCH) + halfv.getY());
         Vector p2 = p1.add(halfv);
         c.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());

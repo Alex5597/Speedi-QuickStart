@@ -73,11 +73,12 @@ which uses generic names `M1`–`M4` and the gamepad buttons.)
 2. Run **`PinPointLocalizerTest`** and push/drive the robot around:
    - Drive **forward** → `Y` must increase
    - Drive **right** → `X` must increase
-   - Turn **counter-clockwise** → heading must increase
+   - Turn **clockwise (to the right)** → heading must increase
    - If a direction is flipped, change `shouldReverseForwardEncoder` / `shouldReverseLateralEncoder`
    - The frequency shown must be between 900 and 2000, otherwise the Pinpoint has a problem
 
-Everything in SPEEDI is in **cm** and **radians**, the robot starts at (0, 0) facing "forward" (+Y).
+Everything in SPEEDI is in **cm** and **radians**, the robot starts at (0, 0) facing "forward" (+Y),
+and headings are **clockwise positive** (turning right increases the heading, same as the gamepad stick).
 
 ## Step 3 — Drive model (the heart of the LQR follower)
 
